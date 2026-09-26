@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="fr">
 <head>
@@ -809,6 +808,7 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
 
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 </head>
 <body>
 <div class="board">
@@ -1003,7 +1003,7 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
               <span class="shared-user" id="sharedUserLabel"></span>
               <button class="sync-btn" onclick="openSyncDialog()">👤 Changer d’utilisateur</button>
               <button class="crisis-history-btn" onclick="showPage('p8')">📚 Historique</button>
-              <button class="crisis-history-btn" onclick="exportCrisisData()">⬇️ Export Excel/CSV</button>
+              <button class="crisis-history-btn" onclick="exportCrisisData()">⬇️ Export Excel</button>
               <button class="crisis-open-btn" id="homeCrisisBtn" onclick="showPage('p5')">
                 🚨 Déclencher / ouvrir une crise
               </button>
@@ -1551,7 +1551,7 @@ onclick="openModal(
               <button class="quick-action event" onclick="showPage('p6')">📝 Ajouter un événement</button>
               <button class="quick-action point" onclick="showPage('p7')">📊 Faire un point de situation</button>
               <button class="quick-action report" onclick="generateReporting()">📤 Générer le reporting</button>
-              <button class="quick-action export" onclick="exportCrisisData()">⬇️ Export Excel/CSV</button>
+              <button class="quick-action export" onclick="exportCrisisData()">⬇️ Export Excel</button>
             </div>
 
             <div class="v2-panel">
@@ -3112,41 +3112,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 // ================================================================
-// V5.2 — EXPORT STRUCTURÉ DES DONNÉES
+// V5.4 — EXPORT EXCEL UNIQUE (.XLSX)
 // ================================================================
-function csvEscape(v) {
-  if (v === null || v === undefined) return '';
-  let s = typeof v === 'object' ? JSON.stringify(v) : String(v);
-  if (/[;"\n\r]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
-  return s;
-}
-
-function toCsv(rows, headers) {
-  const sep = ';';
-  const lines = [];
-  lines.push(headers.map(h => csvEscape(h.label)).join(sep));
-  rows.forEach(r => {
-    lines.push(headers.map(h => csvEscape(
-      typeof h.get === 'function' ? h.get(r) : r[h.key]
-    )).join(sep));
-  });
-  return '\ufeff' + lines.join('\r\n');
-}
-
-function downloadTextFile(filename, content, mime='text/csv;charset=utf-8;') {
-  const blob = new Blob([content], { type: mime });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    URL.revokeObjectURL(url);
-    a.remove();
-  }, 500);
-}
-
 function flattenSituationData(d={}) {
   const flat = {};
   Object.keys(d || {}).forEach(k => {
@@ -3156,8 +3123,57 @@ function flattenSituationData(d={}) {
   return flat;
 }
 
+function safeExcelValue(v) {
+  if (v === null || v === undefined) return '';
+  if (typeof v === 'object') return JSON.stringify(v);
+  return v;
+}
+
+function excelDateValue(v) {
+  if (!v) return '';
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? v : d;
+}
+
+function styleExcelSheet(ws, widths={}) {
+  ws.views = [{state:'frozen', ySplit:1}];
+  ws.autoFilter = { from: 'A1', to: ws.getRow(1).getCell(ws.columnCount).address };
+
+  const header = ws.getRow(1);
+  header.height = 24;
+  header.eachCell(cell => {
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0B4F79' } };
+    cell.alignment = { vertical:'middle', horizontal:'center', wrapText:true };
+    cell.border = {
+      bottom: { style:'thin', color:{argb:'FFB7C9D6'} }
+    };
+  });
+
+  ws.columns.forEach((col, idx) => {
+    const key = col.key || '';
+    col.width = widths[key] || 18;
+    col.alignment = { vertical:'top', wrapText:true };
+  });
+
+  ws.eachRow((row, rowNumber) => {
+    if (rowNumber > 1) {
+      row.alignment = { vertical:'top', wrapText:true };
+      if (rowNumber % 2 === 0) {
+        row.eachCell(cell => {
+          cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FFF7FAFC'} };
+        });
+      }
+    }
+  });
+}
+
 async function exportCrisisData() {
   try {
+    if (typeof ExcelJS === 'undefined') {
+      throw new Error("Le module Excel n'est pas chargé. Rechargez la page puis réessayez.");
+    }
+
     let crises = [];
     let events = [];
     let points = [];
@@ -3179,10 +3195,10 @@ async function exportCrisisData() {
     } else {
       const data = loadCrisisData();
       const archived = Array.isArray(data.archives) ? data.archives : [];
-      crises = [...archived];
-      if (data.active) crises.push(data.active);
+      const all = [...archived];
+      if (data.active) all.push(data.active);
 
-      crises = crises.map(c => ({
+      crises = all.map(c => ({
         id: c.id || '',
         type: c.type || '',
         level: c.level || '',
@@ -3194,9 +3210,6 @@ async function exportCrisisData() {
         created_by_name: c.created_by_name || c.createdByName || '',
         created_at: c.created_at || c.createdAt || ''
       }));
-
-      const all = [...archived];
-      if (data.active) all.push(data.active);
 
       all.forEach(c => {
         (c.events || []).forEach(e => events.push({
@@ -3212,6 +3225,7 @@ async function exportCrisisData() {
           author_role: e.author_role || e.authorRole || '',
           created_at: e.created_at || ''
         }));
+
         (c.points || []).forEach(p => points.push({
           id: p.id || '',
           crisis_id: c.id || '',
@@ -3224,62 +3238,143 @@ async function exportCrisisData() {
       });
     }
 
-    const crisisHeaders = [
-      {label:'crisis_id', key:'id'},
-      {label:'type', key:'type'},
-      {label:'niveau', key:'level'},
-      {label:'titre', key:'title'},
-      {label:'pilote', key:'pilot'},
-      {label:'statut', key:'status'},
-      {label:'debut', key:'started_at'},
-      {label:'fin', key:'ended_at'},
-      {label:'cree_par', key:'created_by_name'},
-      {label:'cree_le', key:'created_at'}
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'Gestion de crise Saint-Gilles';
+    wb.created = new Date();
+
+    // ONGLET 1 — CRISES
+    const wsCrises = wb.addWorksheet('Crises');
+    wsCrises.columns = [
+      {header:'ID crise', key:'id'},
+      {header:'Type', key:'type'},
+      {header:'Niveau', key:'level'},
+      {header:'Titre', key:'title'},
+      {header:'Pilote', key:'pilot'},
+      {header:'Statut', key:'status'},
+      {header:'Début', key:'started_at'},
+      {header:'Fin', key:'ended_at'},
+      {header:'Créée par', key:'created_by_name'},
+      {header:'Créée le', key:'created_at'}
     ];
 
-    const eventHeaders = [
-      {label:'event_id', key:'id'},
-      {label:'crisis_id', key:'crisis_id'},
-      {label:'horodatage', key:'event_at'},
-      {label:'type', key:'type'},
-      {label:'evenement', key:'event_text'},
-      {label:'mesure', key:'measure'},
-      {label:'responsable', key:'owner'},
-      {label:'impact', key:'impact'},
-      {label:'auteur', key:'author_name'},
-      {label:'fonction_auteur', key:'author_role'},
-      {label:'cree_le', key:'created_at'}
-    ];
+    crises.forEach(c => wsCrises.addRow({
+      ...c,
+      started_at: excelDateValue(c.started_at),
+      ended_at: excelDateValue(c.ended_at),
+      created_at: excelDateValue(c.created_at)
+    }));
+    ['F','G','H','J'].forEach(col => wsCrises.getColumn(col).numFmt = col === 'F' ? '@' : 'dd/mm/yyyy hh:mm');
+    styleExcelSheet(wsCrises, {
+      id:30, type:24, level:10, title:28, pilot:22, status:12,
+      started_at:20, ended_at:20, created_by_name:20, created_at:20
+    });
 
+    // ONGLET 2 — MAIN COURANTE
+    const wsEvents = wb.addWorksheet('Main courante');
+    wsEvents.columns = [
+      {header:'ID événement', key:'id'},
+      {header:'ID crise', key:'crisis_id'},
+      {header:'Horodatage', key:'event_at'},
+      {header:'Type', key:'type'},
+      {header:'Événement', key:'event_text'},
+      {header:'Mesure / Action', key:'measure'},
+      {header:'Responsable', key:'owner'},
+      {header:'Impact', key:'impact'},
+      {header:'Auteur', key:'author_name'},
+      {header:'Fonction auteur', key:'author_role'},
+      {header:'Créé le', key:'created_at'}
+    ];
+    events.forEach(e => wsEvents.addRow({
+      ...e,
+      event_at: excelDateValue(e.event_at),
+      created_at: excelDateValue(e.created_at)
+    }));
+    wsEvents.getColumn('C').numFmt = 'dd/mm/yyyy hh:mm';
+    wsEvents.getColumn('K').numFmt = 'dd/mm/yyyy hh:mm';
+    styleExcelSheet(wsEvents, {
+      id:30, crisis_id:30, event_at:20, type:18, event_text:42,
+      measure:38, owner:22, impact:24, author_name:18, author_role:24, created_at:20
+    });
+
+    // ONGLET 3 — POINTS DE SITUATION
     const situationKeys = new Set();
     points.forEach(p => {
       const f = flattenSituationData(p.data || {});
       Object.keys(f).forEach(k => situationKeys.add(k));
     });
 
-    const pointHeaders = [
-      {label:'point_id', key:'id'},
-      {label:'crisis_id', key:'crisis_id'},
-      {label:'horodatage', key:'point_at'},
-      {label:'auteur', key:'author_name'},
-      {label:'fonction_auteur', key:'author_role'},
-      ...Array.from(situationKeys).sort().map(k => ({
-        label:k,
-        get:(r) => flattenSituationData(r.data || {})[k]
-      })),
-      {label:'cree_le', key:'created_at'}
+    const pointBaseColumns = [
+      {header:'ID point', key:'id'},
+      {header:'ID crise', key:'crisis_id'},
+      {header:'Horodatage', key:'point_at'},
+      {header:'Auteur', key:'author_name'},
+      {header:'Fonction auteur', key:'author_role'}
     ];
 
+    const dynamicColumns = Array.from(situationKeys).sort().map(k => ({
+      header: k.replaceAll('_',' '),
+      key: 'data__' + k
+    }));
+
+    const wsPoints = wb.addWorksheet('Points de situation');
+    wsPoints.columns = [
+      ...pointBaseColumns,
+      ...dynamicColumns,
+      {header:'Créé le', key:'created_at'}
+    ];
+
+    points.forEach(p => {
+      const flat = flattenSituationData(p.data || {});
+      const row = {
+        id: p.id || '',
+        crisis_id: p.crisis_id || '',
+        point_at: excelDateValue(p.point_at),
+        author_name: p.author_name || '',
+        author_role: p.author_role || '',
+        created_at: excelDateValue(p.created_at)
+      };
+      Object.keys(flat).forEach(k => row['data__' + k] = safeExcelValue(flat[k]));
+      wsPoints.addRow(row);
+    });
+
+    wsPoints.getColumn('C').numFmt = 'dd/mm/yyyy hh:mm';
+    wsPoints.getColumn(wsPoints.columnCount).numFmt = 'dd/mm/yyyy hh:mm';
+
+    const widths = {
+      id:30, crisis_id:30, point_at:20, author_name:18, author_role:24, created_at:20
+    };
+    dynamicColumns.forEach(c => widths[c.key] = 18);
+    styleExcelSheet(wsPoints, widths);
+
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+
     const stamp = new Date().toISOString().replace(/[:T]/g,'-').slice(0,16);
+    const filename = `Gestion_crise_Saint-Gilles_${stamp}.xlsx`;
 
-    downloadTextFile(`gestion-crise_crises_${stamp}.csv`, toCsv(crises, crisisHeaders));
-    setTimeout(() => downloadTextFile(`gestion-crise_main-courante_${stamp}.csv`, toCsv(events, eventHeaders)), 250);
-    setTimeout(() => downloadTextFile(`gestion-crise_points-situation_${stamp}.csv`, toCsv(points, pointHeaders)), 500);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      a.remove();
+    }, 1000);
 
-    alert(`Export terminé :\n- ${crises.length} crise(s)\n- ${events.length} événement(s)\n- ${points.length} point(s) de situation\n\n3 fichiers CSV compatibles Excel ont été générés.`);
+    alert(
+      `Export Excel terminé.\n\n` +
+      `Un seul fichier a été généré avec 3 onglets :\n` +
+      `• Crises : ${crises.length} ligne(s)\n` +
+      `• Main courante : ${events.length} événement(s)\n` +
+      `• Points de situation : ${points.length} point(s)`
+    );
   } catch (err) {
     console.error(err);
-    alert('Export impossible : ' + (err?.message || err));
+    alert('Export Excel impossible : ' + (err?.message || err));
   }
 }
 
