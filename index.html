@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="fr">
 <head>
@@ -629,7 +630,7 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
 .kpi-note { margin-top:6px; font-size:10px; color:#7a8791; }
 
 .quick-actions {
-  display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0 18px;
+  display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:14px 0 18px;
 }
 .quick-action {
   border:none; border-radius:14px; padding:17px 14px; cursor:pointer; color:white;
@@ -638,6 +639,7 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
 .quick-action.event { background:#596b7a; }
 .quick-action.point { background:var(--blue); }
 .quick-action.report { background:var(--green); }
+.quick-action.export { background:#d97706; }
 .quick-action:hover { transform:translateY(-1px); filter:brightness(1.05); }
 
 .v2-panel {
@@ -1001,6 +1003,7 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
               <span class="shared-user" id="sharedUserLabel"></span>
               <button class="sync-btn" onclick="openSyncDialog()">👤 Changer d’utilisateur</button>
               <button class="crisis-history-btn" onclick="showPage('p8')">📚 Historique</button>
+              <button class="crisis-history-btn" onclick="exportCrisisData()">⬇️ Export Excel/CSV</button>
               <button class="crisis-open-btn" id="homeCrisisBtn" onclick="showPage('p5')">
                 🚨 Déclencher / ouvrir une crise
               </button>
@@ -1548,6 +1551,7 @@ onclick="openModal(
               <button class="quick-action event" onclick="showPage('p6')">📝 Ajouter un événement</button>
               <button class="quick-action point" onclick="showPage('p7')">📊 Faire un point de situation</button>
               <button class="quick-action report" onclick="generateReporting()">📤 Générer le reporting</button>
+              <button class="quick-action export" onclick="exportCrisisData()">⬇️ Export Excel/CSV</button>
             </div>
 
             <div class="v2-panel">
@@ -3105,6 +3109,179 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 });
+
+
+// ================================================================
+// V5.2 — EXPORT STRUCTURÉ DES DONNÉES
+// ================================================================
+function csvEscape(v) {
+  if (v === null || v === undefined) return '';
+  let s = typeof v === 'object' ? JSON.stringify(v) : String(v);
+  if (/[;"\n\r]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+function toCsv(rows, headers) {
+  const sep = ';';
+  const lines = [];
+  lines.push(headers.map(h => csvEscape(h.label)).join(sep));
+  rows.forEach(r => {
+    lines.push(headers.map(h => csvEscape(
+      typeof h.get === 'function' ? h.get(r) : r[h.key]
+    )).join(sep));
+  });
+  return '\ufeff' + lines.join('\r\n');
+}
+
+function downloadTextFile(filename, content, mime='text/csv;charset=utf-8;') {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+    a.remove();
+  }, 500);
+}
+
+function flattenSituationData(d={}) {
+  const flat = {};
+  Object.keys(d || {}).forEach(k => {
+    const v = d[k];
+    flat[k] = (v && typeof v === 'object') ? JSON.stringify(v) : v;
+  });
+  return flat;
+}
+
+async function exportCrisisData() {
+  try {
+    let crises = [];
+    let events = [];
+    let points = [];
+
+    if (sharedConnected && sharedClient) {
+      const [cRes, eRes, pRes] = await Promise.all([
+        sharedClient.from('crises').select('*').order('started_at', {ascending:true}),
+        sharedClient.from('crisis_events').select('*').order('event_at', {ascending:true}),
+        sharedClient.from('situation_points').select('*').order('point_at', {ascending:true})
+      ]);
+
+      if (cRes.error) throw cRes.error;
+      if (eRes.error) throw eRes.error;
+      if (pRes.error) throw pRes.error;
+
+      crises = cRes.data || [];
+      events = eRes.data || [];
+      points = pRes.data || [];
+    } else {
+      const data = loadCrisisData();
+      const archived = Array.isArray(data.archives) ? data.archives : [];
+      crises = [...archived];
+      if (data.active) crises.push(data.active);
+
+      crises = crises.map(c => ({
+        id: c.id || '',
+        type: c.type || '',
+        level: c.level || '',
+        title: c.title || '',
+        pilot: c.pilot || '',
+        status: c.status || (c.endedAt ? 'closed' : 'active'),
+        started_at: c.started_at || c.startedAt || '',
+        ended_at: c.ended_at || c.endedAt || '',
+        created_by_name: c.created_by_name || c.createdByName || '',
+        created_at: c.created_at || c.createdAt || ''
+      }));
+
+      const all = [...archived];
+      if (data.active) all.push(data.active);
+
+      all.forEach(c => {
+        (c.events || []).forEach(e => events.push({
+          id: e.id || '',
+          crisis_id: c.id || '',
+          event_at: e.event_at || e.at || '',
+          type: e.type || '',
+          event_text: e.event_text || e.text || '',
+          measure: e.measure || '',
+          owner: e.owner || '',
+          impact: e.impact || '',
+          author_name: e.author_name || e.authorName || '',
+          author_role: e.author_role || e.authorRole || '',
+          created_at: e.created_at || ''
+        }));
+        (c.points || []).forEach(p => points.push({
+          id: p.id || '',
+          crisis_id: c.id || '',
+          point_at: p.point_at || p.at || '',
+          data: p.data || p,
+          author_name: p.author_name || p.authorName || '',
+          author_role: p.author_role || p.authorRole || '',
+          created_at: p.created_at || ''
+        }));
+      });
+    }
+
+    const crisisHeaders = [
+      {label:'crisis_id', key:'id'},
+      {label:'type', key:'type'},
+      {label:'niveau', key:'level'},
+      {label:'titre', key:'title'},
+      {label:'pilote', key:'pilot'},
+      {label:'statut', key:'status'},
+      {label:'debut', key:'started_at'},
+      {label:'fin', key:'ended_at'},
+      {label:'cree_par', key:'created_by_name'},
+      {label:'cree_le', key:'created_at'}
+    ];
+
+    const eventHeaders = [
+      {label:'event_id', key:'id'},
+      {label:'crisis_id', key:'crisis_id'},
+      {label:'horodatage', key:'event_at'},
+      {label:'type', key:'type'},
+      {label:'evenement', key:'event_text'},
+      {label:'mesure', key:'measure'},
+      {label:'responsable', key:'owner'},
+      {label:'impact', key:'impact'},
+      {label:'auteur', key:'author_name'},
+      {label:'fonction_auteur', key:'author_role'},
+      {label:'cree_le', key:'created_at'}
+    ];
+
+    const situationKeys = new Set();
+    points.forEach(p => {
+      const f = flattenSituationData(p.data || {});
+      Object.keys(f).forEach(k => situationKeys.add(k));
+    });
+
+    const pointHeaders = [
+      {label:'point_id', key:'id'},
+      {label:'crisis_id', key:'crisis_id'},
+      {label:'horodatage', key:'point_at'},
+      {label:'auteur', key:'author_name'},
+      {label:'fonction_auteur', key:'author_role'},
+      ...Array.from(situationKeys).sort().map(k => ({
+        label:k,
+        get:(r) => flattenSituationData(r.data || {})[k]
+      })),
+      {label:'cree_le', key:'created_at'}
+    ];
+
+    const stamp = new Date().toISOString().replace(/[:T]/g,'-').slice(0,16);
+
+    downloadTextFile(`gestion-crise_crises_${stamp}.csv`, toCsv(crises, crisisHeaders));
+    setTimeout(() => downloadTextFile(`gestion-crise_main-courante_${stamp}.csv`, toCsv(events, eventHeaders)), 250);
+    setTimeout(() => downloadTextFile(`gestion-crise_points-situation_${stamp}.csv`, toCsv(points, pointHeaders)), 500);
+
+    alert(`Export terminé :\n- ${crises.length} crise(s)\n- ${events.length} événement(s)\n- ${points.length} point(s) de situation\n\n3 fichiers CSV compatibles Excel ont été générés.`);
+  } catch (err) {
+    console.error(err);
+    alert('Export impossible : ' + (err?.message || err));
+  }
+}
 
 </script>
 
