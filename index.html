@@ -539,7 +539,802 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
   .p1-footer-row { grid-template-columns: 1fr; }
   .header-inner { padding: 0 16px; }
 }
+
+/* ================================================================
+   V2 — CONDUITE DE CRISE SIMPLE
+   ================================================================ */
+.crisis-strip {
+  display:flex; align-items:center; justify-content:space-between; gap:18px;
+  padding:16px 22px; background:#eef4f8; border-top:5px solid var(--blue);
+  border-bottom:2px solid #d7e2ea;
+}
+.crisis-strip-left { display:flex; flex-direction:column; gap:4px; }
+.crisis-strip-kicker {
+  font-size:10px; font-weight:900; letter-spacing:1.3px; color:var(--blue);
+  text-transform:uppercase;
+}
+.crisis-strip-title { font-size:20px; font-weight:900; color:#222; }
+.crisis-strip-meta { font-size:12px; color:#666; }
+.crisis-open-btn {
+  border:none; border-radius:12px; padding:13px 20px; background:var(--red); color:white;
+  font-weight:900; font-size:14px; cursor:pointer; text-transform:uppercase;
+  box-shadow:0 4px 12px rgba(255,26,26,.18);
+}
+.crisis-open-btn:hover { filter:brightness(1.06); transform:translateY(-1px); }
+
+.v2-page-body { flex:1; padding:22px 26px 30px; background:#f7f9fb; overflow:auto; }
+.v2-head {
+  display:flex; justify-content:space-between; align-items:center; gap:14px;
+  margin-bottom:16px; flex-wrap:wrap;
+}
+.v2-title-wrap { display:flex; flex-direction:column; gap:3px; }
+.v2-title { font-size:22px; font-weight:900; color:var(--blue); text-transform:uppercase; }
+.v2-subtitle { font-size:12px; color:#667; }
+.status-pill {
+  display:inline-flex; align-items:center; gap:7px; padding:7px 12px; border-radius:999px;
+  font-size:11px; font-weight:900; text-transform:uppercase;
+}
+.status-pill.active { background:#ffe1e1; color:#b40000; }
+.status-pill.closed { background:#e8edf1; color:#56616a; }
+
+.crisis-start-card {
+  max-width:760px; margin:26px auto; background:white; border:1px solid #dfe7ee;
+  border-radius:16px; padding:22px; box-shadow:0 5px 18px rgba(7,61,103,.08);
+}
+.crisis-start-card h2 { color:var(--blue); margin-bottom:6px; font-size:20px; }
+.crisis-start-card p { color:#667; font-size:13px; line-height:1.5; margin-bottom:18px; }
+
+.form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:13px; }
+.form-grid.one { grid-template-columns:1fr; }
+.field { display:flex; flex-direction:column; gap:5px; }
+.field label {
+  font-size:10px; font-weight:900; color:#4b5e6c; letter-spacing:.8px; text-transform:uppercase;
+}
+.field input, .field select, .field textarea {
+  width:100%; border:1px solid #ccd8e1; border-radius:9px; padding:10px 11px;
+  font-family:Arial,Helvetica,sans-serif; font-size:13px; background:white; color:#111;
+}
+.field textarea { min-height:78px; resize:vertical; }
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline:2px solid rgba(0,174,234,.18); border-color:var(--cyan);
+}
+.v2-primary {
+  border:none; border-radius:9px; padding:11px 17px; background:var(--blue); color:white;
+  font-weight:900; cursor:pointer; font-size:13px;
+}
+.v2-primary.red { background:var(--red); }
+.v2-primary.green { background:var(--green); }
+.v2-secondary {
+  border:1px solid #b9c7d1; border-radius:9px; padding:10px 15px; background:white; color:#334;
+  font-weight:800; cursor:pointer; font-size:12px;
+}
+.v2-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
+.kpi-grid {
+  display:grid; grid-template-columns:repeat(4,minmax(120px,1fr)); gap:12px; margin-bottom:16px;
+}
+.kpi-card {
+  background:white; border:1px solid #dfe7ee; border-radius:13px; padding:14px 15px;
+  box-shadow:0 2px 8px rgba(7,61,103,.05);
+}
+.kpi-label {
+  font-size:9px; color:#667; font-weight:900; letter-spacing:.8px; text-transform:uppercase;
+  margin-bottom:5px;
+}
+.kpi-value { font-size:24px; font-weight:900; color:#111; line-height:1; }
+.kpi-value.red { color:#c81010; }
+.kpi-value.blue { color:var(--blue); }
+.kpi-value.orange { color:#c96800; }
+.kpi-value.green { color:#3d7d2f; }
+.kpi-note { margin-top:6px; font-size:10px; color:#7a8791; }
+
+.quick-actions {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0 18px;
+}
+.quick-action {
+  border:none; border-radius:14px; padding:17px 14px; cursor:pointer; color:white;
+  font-size:15px; font-weight:900; text-transform:uppercase; box-shadow:0 4px 12px rgba(0,0,0,.10);
+}
+.quick-action.event { background:#596b7a; }
+.quick-action.point { background:var(--blue); }
+.quick-action.report { background:var(--green); }
+.quick-action:hover { transform:translateY(-1px); filter:brightness(1.05); }
+
+.v2-panel {
+  background:white; border:1px solid #dfe7ee; border-radius:14px; padding:16px 17px;
+  box-shadow:0 2px 8px rgba(7,61,103,.05); margin-bottom:15px;
+}
+.v2-panel h3 {
+  font-size:14px; color:var(--blue); text-transform:uppercase; letter-spacing:.6px; margin-bottom:11px;
+}
+.event-list { display:flex; flex-direction:column; gap:8px; }
+.event-row {
+  display:grid; grid-template-columns:78px 90px 1fr 150px; gap:10px; align-items:start;
+  padding:9px 0; border-bottom:1px solid #edf1f4; font-size:12px;
+}
+.event-row:last-child { border-bottom:none; }
+.event-time { font-weight:900; color:var(--blue); }
+.event-type { font-size:10px; font-weight:900; text-transform:uppercase; color:#596b7a; }
+.event-text { color:#222; line-height:1.4; }
+.event-owner { color:#667; font-size:11px; }
+
+.mc-form-grid { display:grid; grid-template-columns:180px 1fr 1fr; gap:12px; }
+.mc-form-grid .wide { grid-column:span 2; }
+
+.point-section {
+  border-top:1px solid #e8edf1; padding-top:14px; margin-top:14px;
+}
+.point-section:first-of-type { border-top:none; padding-top:0; margin-top:0; }
+.point-section h4 {
+  font-size:12px; color:var(--blue); text-transform:uppercase; letter-spacing:.7px; margin-bottom:10px;
+}
+.details-box {
+  margin-top:12px; background:#f8fafb; border:1px dashed #c6d3dd; border-radius:10px; padding:10px 12px;
+}
+.details-box summary {
+  cursor:pointer; font-size:11px; font-weight:900; color:var(--blue); text-transform:uppercase;
+}
+.report-box {
+  white-space:pre-wrap; background:#0c2233; color:white; padding:16px; border-radius:12px;
+  font-family:Consolas,monospace; font-size:12px; line-height:1.5; margin-top:12px;
+}
+.empty-state {
+  color:#71808b; font-size:12px; padding:18px; text-align:center; border:1px dashed #cbd6df;
+  border-radius:10px; background:#fafcfd;
+}
+.small-link {
+  border:none; background:transparent; color:var(--blue); text-decoration:underline;
+  cursor:pointer; font-size:11px; font-weight:700;
+}
+
+@media (max-width: 900px) {
+  .crisis-strip { align-items:flex-start; flex-direction:column; }
+  .crisis-open-btn { width:100%; }
+  .kpi-grid { grid-template-columns:repeat(2,1fr); }
+  .quick-actions { grid-template-columns:1fr; }
+  .form-grid { grid-template-columns:1fr; }
+  .mc-form-grid { grid-template-columns:1fr; }
+  .mc-form-grid .wide { grid-column:span 1; }
+  .event-row { grid-template-columns:70px 1fr; }
+  .event-text, .event-owner { grid-column:2; }
+}
+
+
+/* ================================================================
+   V4 — HISTORIQUE DES CRISES
+   ================================================================ */
+.crisis-strip-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.crisis-history-btn {
+  border:2px solid var(--blue); border-radius:12px; padding:11px 16px;
+  background:white; color:var(--blue); font-weight:900; font-size:13px;
+  cursor:pointer; text-transform:uppercase;
+}
+.crisis-history-btn:hover { background:#eef4f8; transform:translateY(-1px); }
+
+.archive-list { display:flex; flex-direction:column; gap:11px; }
+.archive-card {
+  background:white; border:1px solid #dfe7ee; border-left:5px solid var(--blue);
+  border-radius:12px; padding:14px 16px; display:grid;
+  grid-template-columns:1fr auto; gap:12px; align-items:center;
+  box-shadow:0 2px 7px rgba(7,61,103,.05);
+}
+.archive-card-title { font-size:15px; font-weight:900; color:#1d2d3a; }
+.archive-card-meta { margin-top:4px; font-size:11px; color:#6b7882; line-height:1.5; }
+.archive-card-stats { margin-top:7px; font-size:11px; color:#394b58; }
+.archive-open-btn {
+  border:none; border-radius:9px; padding:9px 13px; background:var(--blue); color:white;
+  font-weight:900; cursor:pointer; font-size:11px; white-space:nowrap;
+}
+.archive-detail-head {
+  display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;
+  padding-bottom:12px; border-bottom:1px solid #e6edf2; margin-bottom:13px;
+}
+.archive-kpis {
+  display:grid; grid-template-columns:repeat(4,minmax(110px,1fr)); gap:10px; margin-bottom:15px;
+}
+.archive-kpi {
+  border:1px solid #e0e8ee; border-radius:10px; padding:11px; background:#fafcfd;
+}
+.archive-kpi .lab { font-size:9px; font-weight:900; color:#6b7882; text-transform:uppercase; }
+.archive-kpi .val { margin-top:4px; font-size:18px; font-weight:900; color:var(--blue); }
+.archive-section-title {
+  margin:15px 0 8px; font-size:12px; color:var(--blue); font-weight:900;
+  text-transform:uppercase; letter-spacing:.7px;
+}
+.archive-point {
+  padding:10px 0; border-bottom:1px solid #edf1f4; font-size:11px; line-height:1.5;
+}
+.archive-point:last-child { border-bottom:none; }
+
+@media (max-width: 900px) {
+  .crisis-strip-actions { width:100%; }
+  .crisis-strip-actions button { flex:1; }
+  .archive-card { grid-template-columns:1fr; }
+  .archive-kpis { grid-template-columns:repeat(2,1fr); }
+}
+
+
+/* ================================================================
+   V5 — MODE PARTAGÉ / MULTI-UTILISATEURS
+   ================================================================ */
+.sync-pill {
+  display:inline-flex; align-items:center; gap:7px;
+  padding:7px 11px; border-radius:999px;
+  font-size:10px; font-weight:900; text-transform:uppercase;
+  letter-spacing:.5px; white-space:nowrap;
+}
+.sync-pill.local { background:#fff3cd; color:#7a5a00; border:1px solid #f1d77c; }
+.sync-pill.connecting { background:#e7f1fb; color:#275d8c; border:1px solid #bdd7ee; }
+.sync-pill.shared { background:#e5f5e0; color:#2f6f22; border:1px solid #b9deb1; }
+.sync-pill.error { background:#ffe3e3; color:#a40000; border:1px solid #efb6b6; }
+
+.sync-btn {
+  border:1px solid #b9c7d1; background:white; color:var(--blue);
+  border-radius:9px; padding:9px 12px; font-size:11px; font-weight:900;
+  cursor:pointer;
+}
+.sync-btn:hover { background:#f3f7fa; }
+
+.shared-user {
+  font-size:11px; color:#536674; font-weight:700; white-space:nowrap;
+}
+
+#syncDialog { max-width:720px; }
+.sync-help {
+  font-size:11px; color:#687985; line-height:1.5;
+  background:#f6f9fb; border-left:4px solid var(--cyan);
+  padding:10px 12px; border-radius:6px; margin:8px 0 14px;
+}
+.sync-config-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.sync-config-grid .full { grid-column:1/-1; }
+.sync-config-actions { display:flex; gap:9px; justify-content:flex-end; margin-top:14px; flex-wrap:wrap; }
+.sync-msg { margin-top:10px; font-size:11px; font-weight:700; min-height:17px; }
+.sync-msg.ok { color:#347126; }
+.sync-msg.err { color:#b00020; }
+
+.live-flash {
+  animation: liveFlash .7s ease;
+}
+@keyframes liveFlash {
+  0% { box-shadow:0 0 0 0 rgba(0,174,234,.45); }
+  100% { box-shadow:0 0 0 12px rgba(0,174,234,0); }
+}
+
+@media (max-width:900px) {
+  .sync-config-grid { grid-template-columns:1fr; }
+  .sync-config-grid .full { grid-column:1; }
+}
+
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+// ================================================================
+// V5 — MODE PARTAGÉ SUPABASE / TEMPS RÉEL
+// ================================================================
+const SYNC_CONFIG_KEY = 'sg_supabase_config_v1';
+const IDENTITY_KEY = 'sg_crisis_identity_v1';
+
+let sharedClient = null;
+let sharedConnected = false;
+let sharedChannel = null;
+let remoteReloadTimer = null;
+
+// Valeurs laissées vides dans la version TEST.
+// Elles pourront être intégrées directement dans la version PROD.
+const DEFAULT_SUPABASE_URL = '';
+const DEFAULT_SUPABASE_KEY = '';
+
+function readSyncConfig() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SYNC_CONFIG_KEY) || '{}');
+    return {
+      url: saved.url || DEFAULT_SUPABASE_URL || '',
+      key: saved.key || DEFAULT_SUPABASE_KEY || ''
+    };
+  } catch(e) {
+    return {url:DEFAULT_SUPABASE_URL || '', key:DEFAULT_SUPABASE_KEY || ''};
+  }
+}
+
+function readIdentity() {
+  try { return JSON.parse(localStorage.getItem(IDENTITY_KEY) || '{}'); }
+  catch(e) { return {}; }
+}
+
+function saveIdentity(name, role) {
+  localStorage.setItem(IDENTITY_KEY, JSON.stringify({name:name || '', role:role || ''}));
+  updateSharedUserLabel();
+}
+
+function updateSharedUserLabel() {
+  const i = readIdentity();
+  const el = document.getElementById('sharedUserLabel');
+  if (el) el.textContent = i.name ? ('👤 ' + i.name + (i.role ? ' · ' + i.role : '')) : '';
+}
+
+function setSyncStatus(mode, text) {
+  const el = document.getElementById('syncStatus');
+  if (!el) return;
+  el.className = 'sync-pill ' + mode;
+  el.textContent = text;
+}
+
+function setSyncMessage(text, ok=false) {
+  const el = document.getElementById('syncMessage');
+  if (!el) return;
+  el.className = 'sync-msg ' + (ok ? 'ok' : (text ? 'err' : ''));
+  el.textContent = text || '';
+}
+
+function openSyncDialog() {
+  const cfg = readSyncConfig();
+  const id = readIdentity();
+  const d = document.getElementById('syncDialog');
+  if (!d) return;
+  document.getElementById('syncName').value = id.name || '';
+  document.getElementById('syncRole').value = id.role || '';
+  document.getElementById('syncUrl').value = cfg.url || '';
+  document.getElementById('syncKey').value = cfg.key || '';
+  setSyncMessage(sharedConnected ? 'Connexion partagée active.' : '');
+  d.showModal();
+}
+
+function closeSyncDialog() {
+  const d = document.getElementById('syncDialog');
+  if (d) d.close();
+}
+
+function saveIdentityOnly() {
+  const name = val('syncName');
+  const role = val('syncRole');
+  if (!name) { setSyncMessage('Renseignez votre nom.'); return; }
+  saveIdentity(name, role);
+  setSyncMessage('Identité enregistrée sur ce poste.', true);
+}
+
+async function saveAndConnectShared() {
+  const name = val('syncName');
+  const role = val('syncRole');
+  const url = val('syncUrl');
+  const key = val('syncKey');
+
+  if (!name) { setSyncMessage('Renseignez votre nom.'); return; }
+  if (!url || !key) { setSyncMessage('Renseignez l’URL du projet Supabase et la Publishable Key.'); return; }
+
+  saveIdentity(name, role);
+  localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify({url, key}));
+  setSyncMessage('Connexion en cours...');
+  const ok = await initSharedMode(true);
+  if (ok) {
+    setSyncMessage('Mode partagé activé. Les mises à jour sont maintenant synchronisées.', true);
+    setTimeout(closeSyncDialog, 700);
+  }
+}
+
+function ensureIdentityForWrite() {
+  const i = readIdentity();
+  if (!i.name) {
+    openSyncDialog();
+    setSyncMessage('Renseignez votre nom avant d’enregistrer une information.');
+    return false;
+  }
+  return true;
+}
+
+async function ensureAnonymousSession() {
+  const { data: sessionData, error: sessionError } = await sharedClient.auth.getSession();
+  if (sessionError) throw sessionError;
+  if (sessionData && sessionData.session) return sessionData.session;
+
+  const { data, error } = await sharedClient.auth.signInAnonymously();
+  if (error) throw error;
+  return data.session;
+}
+
+function mapCrisisRow(c) {
+  if (!c) return null;
+  return {
+    id:c.id,
+    type:c.type,
+    level:c.level,
+    title:c.title,
+    pilot:c.pilot,
+    startedAt:c.started_at,
+    endedAt:c.ended_at
+  };
+}
+
+function mapEventRow(e) {
+  return {
+    id:e.id,
+    at:e.event_at,
+    type:e.type,
+    text:e.event_text,
+    measure:e.measure,
+    owner:e.owner,
+    impact:e.impact,
+    authorName:e.author_name,
+    authorRole:e.author_role
+  };
+}
+
+function mapPointRow(p) {
+  const obj = Object.assign({}, p.data || {});
+  obj.id = p.id;
+  obj.at = p.point_at;
+  obj.authorName = p.author_name;
+  obj.authorRole = p.author_role;
+  return obj;
+}
+
+function writeCacheNoRefresh(data) {
+  localStorage.setItem(CRISIS_KEY, JSON.stringify(data));
+}
+
+// V5 : lecture du cache sans déclencher la migration V3/V4
+loadCrisisData = function() {
+  try {
+    const d = JSON.parse(localStorage.getItem(CRISIS_KEY) || 'null');
+    if (d) {
+      if (!Array.isArray(d.events)) d.events=[];
+      if (!Array.isArray(d.points)) d.points=[];
+      if (!Array.isArray(d.archives)) d.archives=[];
+      return d;
+    }
+  } catch(e) {}
+  return {active:false, crisis:null, events:[], points:[], archives:[]};
+};
+
+saveCrisisData = function(data) {
+  writeCacheNoRefresh(data);
+  refreshCrisisUI();
+  renderArchives();
+};
+
+async function remoteReloadAll(flash=true) {
+  if (!sharedConnected || !sharedClient) return;
+
+  try {
+    const { data: crises, error: ce } = await sharedClient
+      .from('crises')
+      .select('*')
+      .order('started_at', {ascending:false})
+      .limit(50);
+    if (ce) throw ce;
+
+    const activeRow = (crises || []).find(c => c.status === 'active') || null;
+    const closedRows = (crises || []).filter(c => c.status === 'closed');
+
+    const crisisIds = (crises || []).map(c => c.id);
+    let eventRows = [], pointRows = [];
+
+    if (crisisIds.length) {
+      const er = await sharedClient
+        .from('crisis_events')
+        .select('*')
+        .in('crisis_id', crisisIds)
+        .order('event_at', {ascending:true});
+      if (er.error) throw er.error;
+      eventRows = er.data || [];
+
+      const pr = await sharedClient
+        .from('situation_points')
+        .select('*')
+        .in('crisis_id', crisisIds)
+        .order('point_at', {ascending:true});
+      if (pr.error) throw pr.error;
+      pointRows = pr.data || [];
+    }
+
+    const eventsByCrisis = {};
+    eventRows.forEach(e => {
+      (eventsByCrisis[e.crisis_id] ||= []).push(mapEventRow(e));
+    });
+    const pointsByCrisis = {};
+    pointRows.forEach(p => {
+      (pointsByCrisis[p.crisis_id] ||= []).push(mapPointRow(p));
+    });
+
+    const cache = {
+      active: !!activeRow,
+      crisis: activeRow ? mapCrisisRow(activeRow) : null,
+      events: activeRow ? (eventsByCrisis[activeRow.id] || []) : [],
+      points: activeRow ? (pointsByCrisis[activeRow.id] || []) : [],
+      archives: closedRows.map(c => ({
+        archiveId:'AR-' + c.id,
+        crisis:mapCrisisRow(c),
+        events:eventsByCrisis[c.id] || [],
+        points:pointsByCrisis[c.id] || [],
+        archivedAt:c.ended_at
+      }))
+    };
+
+    writeCacheNoRefresh(cache);
+    refreshCrisisUI();
+    renderArchives();
+
+    if (flash) {
+      const cockpit = document.getElementById('crisisActiveView');
+      if (cockpit && cache.active) {
+        cockpit.classList.remove('live-flash');
+        void cockpit.offsetWidth;
+        cockpit.classList.add('live-flash');
+      }
+    }
+  } catch(err) {
+    console.error('remoteReloadAll', err);
+    setSyncStatus('error', '● Synchro en erreur');
+  }
+}
+
+function scheduleRemoteReload() {
+  clearTimeout(remoteReloadTimer);
+  remoteReloadTimer = setTimeout(() => remoteReloadAll(true), 160);
+}
+
+function subscribeSharedRealtime() {
+  if (!sharedClient) return;
+  if (sharedChannel) {
+    try { sharedClient.removeChannel(sharedChannel); } catch(e) {}
+  }
+
+  sharedChannel = sharedClient
+    .channel('saint-gilles-crisis-live')
+    .on('postgres_changes', {event:'*', schema:'public', table:'crises'}, scheduleRemoteReload)
+    .on('postgres_changes', {event:'*', schema:'public', table:'crisis_events'}, scheduleRemoteReload)
+    .on('postgres_changes', {event:'*', schema:'public', table:'situation_points'}, scheduleRemoteReload)
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') setSyncStatus('shared', '● Partagé · temps réel');
+    });
+}
+
+async function initSharedMode(force=false) {
+  const cfg = readSyncConfig();
+  updateSharedUserLabel();
+
+  if (!cfg.url || !cfg.key) {
+    sharedConnected = false;
+    setSyncStatus('local', '● Mode local');
+    return false;
+  }
+
+  try {
+    setSyncStatus('connecting', '● Connexion...');
+    if (!window.supabase || !window.supabase.createClient) {
+      throw new Error('Client Supabase indisponible. Vérifiez la connexion Internet.');
+    }
+
+    sharedClient = window.supabase.createClient(cfg.url, cfg.key, {
+      auth: {
+        persistSession:true,
+        autoRefreshToken:true,
+        detectSessionInUrl:false
+      }
+    });
+
+    await ensureAnonymousSession();
+    sharedConnected = true;
+    setSyncStatus('shared', '● Partagé · temps réel');
+
+    await remoteReloadAll(false);
+    subscribeSharedRealtime();
+    return true;
+  } catch(err) {
+    console.error('Supabase init', err);
+    sharedConnected = false;
+    setSyncStatus('error', '● Partage non connecté');
+    if (force) setSyncMessage('Connexion impossible : ' + (err.message || err));
+    return false;
+  }
+}
+
+// ----------------------------------------------------------------
+// Remplacement des actions d'écriture : distant si connecté,
+// sinon comportement local conservé.
+// ----------------------------------------------------------------
+const localStartCrisisV4 = startCrisis;
+startCrisis = async function() {
+  if (!sharedConnected) return localStartCrisisV4();
+  if (!ensureIdentityForWrite()) return;
+
+  const current = loadCrisisData();
+  if (current.active && current.crisis) {
+    alert('Une crise est déjà active.');
+    showPage('p5');
+    return;
+  }
+
+  const identity = readIdentity();
+  const { data: sessionData } = await sharedClient.auth.getSession();
+  const userId = sessionData.session?.user?.id || null;
+  const crisisId = 'CR-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now());
+
+  const row = {
+    id:crisisId,
+    type:val('startType'),
+    level:val('startLevel'),
+    title:val('startTitle') || val('startType') || 'Crise Saint-Gilles',
+    pilot:val('startPilot') || 'À renseigner',
+    status:'active',
+    started_at:new Date().toISOString(),
+    created_by:userId,
+    created_by_name:identity.name || null
+  };
+
+  const { error } = await sharedClient.from('crises').insert(row);
+  if (error) {
+    alert('Impossible de démarrer la crise : ' + error.message);
+    await remoteReloadAll(false);
+    return;
+  }
+  await remoteReloadAll(false);
+  showPage('p5');
+};
+
+const localCloseCrisisV4 = closeCrisis;
+closeCrisis = async function() {
+  if (!sharedConnected) return localCloseCrisisV4();
+  const data = loadCrisisData();
+  if (!data.active || !data.crisis) return;
+  if (!confirm('Clôturer cette crise ? Elle restera disponible dans l’historique partagé.')) return;
+
+  const { error } = await sharedClient
+    .from('crises')
+    .update({status:'closed', ended_at:new Date().toISOString()})
+    .eq('id', data.crisis.id);
+
+  if (error) {
+    alert('Impossible de clôturer la crise : ' + error.message);
+    return;
+  }
+  await remoteReloadAll(false);
+  showPage('p8');
+};
+
+const localAddEventV4 = addEvent;
+addEvent = async function() {
+  if (!sharedConnected) return localAddEventV4();
+  if (!ensureIdentityForWrite()) return;
+
+  const data = loadCrisisData();
+  if (!data.active || !data.crisis) { alert('Aucune crise active.'); return; }
+  const text = val('evText');
+  if (!text) { alert("Renseignez l'événement."); return; }
+
+  const identity = readIdentity();
+  const { data: sessionData } = await sharedClient.auth.getSession();
+  const userId = sessionData.session?.user?.id || null;
+
+  const row = {
+    id:'EV-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now()),
+    crisis_id:data.crisis.id,
+    type:val('evType'),
+    event_text:text,
+    measure:val('evMeasure'),
+    owner:val('evOwner'),
+    impact:val('evImpact'),
+    author_id:userId,
+    author_name:identity.name,
+    author_role:identity.role || null
+  };
+
+  const { error } = await sharedClient.from('crisis_events').insert(row);
+  if (error) {
+    alert("Impossible d'enregistrer l'événement : " + error.message);
+    return;
+  }
+  clearEventForm();
+  await remoteReloadAll(false);
+};
+
+const localSaveSituationPointV4 = saveSituationPoint;
+saveSituationPoint = async function() {
+  if (!sharedConnected) return localSaveSituationPointV4();
+  if (!ensureIdentityForWrite()) return;
+
+  const data = loadCrisisData();
+  if (!data.active || !data.crisis) { alert('Aucune crise active.'); return; }
+
+  const p = {
+    presentTotal:num('ptPresentTotal'),
+    strikers:num('ptStrikers'),
+    absent:num('ptAbsent'),
+    prepCdi:num('ptPrepCdi'),
+    prepTemp:num('ptPrepTemp'),
+    newTemps:num('ptNewTemps'),
+    forkZone:num('ptForkZone'),
+    forkReceiving:num('ptForkReceiving'),
+    forkPacking:num('ptForkPacking'),
+    cleaning:num('ptCleaning'),
+
+    parcelsPlan:num('ptParcelsPlan'),
+    parcelsDone:num('ptParcelsDone'),
+    hyper:num('ptHyper'),
+    market:num('ptMarket'),
+    proxi:num('ptProxi'),
+    cash:num('ptCash'),
+    remaining:num('ptRemaining'),
+    priorityRemaining:num('ptPriorityRemaining'),
+    relief:num('ptRelief'),
+    prod:num('ptProd'),
+
+    receivingStaff:num('ptReceivingStaff'),
+    receivingFork:num('ptReceivingFork'),
+    receivingTrucksPlan:num('ptReceivingTrucksPlan'),
+    receivingTrucksDone:num('ptReceivingTrucksDone'),
+    recPlan:num('ptRecPlan'),
+    recDone:num('ptRecDone'),
+    stored:num('ptStored'),
+    dockPallets:num('ptDockPallets'),
+    receivingObs:val('ptReceivingObs'),
+
+    shippingStaff:num('ptShippingStaff'),
+    shippingZoneFork:num('ptShippingZoneFork'),
+    shippingPackingFork:num('ptShippingPackingFork'),
+    shippingCleaning:num('ptShippingCleaning'),
+    shippingTrucksPlan:num('ptShippingTrucksPlan'),
+    shippingTrucksDone:num('ptShippingTrucksDone'),
+    prevBoxs:num('ptPrevBoxs'),
+    prevPc:num('ptPrevPc'),
+    blockedTrucks:num('ptBlockedTrucks'),
+    departedTrucks:num('ptDepartedTrucks'),
+    shippingObs:val('ptShippingObs'),
+
+    blocked:val('ptBlocked'),
+    mood:val('ptMood'),
+    entryStatus:val('ptEntryStatus'),
+    exitStatus:val('ptExitStatus'),
+    comment:val('ptComment')
+  };
+
+  p.prep = (p.prepCdi || 0) + (p.prepTemp || 0);
+  p.fork = (p.forkZone || 0) + (p.forkReceiving || 0) + (p.forkPacking || 0);
+
+  const identity = readIdentity();
+  const { data: sessionData } = await sharedClient.auth.getSession();
+  const userId = sessionData.session?.user?.id || null;
+  const pointId = 'PT-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now());
+
+  const pointRow = {
+    id:pointId,
+    crisis_id:data.crisis.id,
+    data:p,
+    author_id:userId,
+    author_name:identity.name,
+    author_role:identity.role || null
+  };
+
+  const { error:pointError } = await sharedClient.from('situation_points').insert(pointRow);
+  if (pointError) {
+    alert('Impossible d’enregistrer le point de situation : ' + pointError.message);
+    return;
+  }
+
+  // Trace automatique dans la main courante
+  await sharedClient.from('crisis_events').insert({
+    id:'EV-' + (crypto.randomUUID ? crypto.randomUUID() : (Date.now()+'-pt')),
+    crisis_id:data.crisis.id,
+    type:'Point situation',
+    event_text:'Point de situation enregistré',
+    measure:p.comment || '',
+    owner:data.crisis.pilot || '',
+    impact:'',
+    author_id:userId,
+    author_name:identity.name,
+    author_role:identity.role || null
+  });
+
+  clearPointForm();
+  await remoteReloadAll(false);
+  showPage('p5');
+};
+
+// Démarrage automatique du partage si des paramètres ont déjà été enregistrés.
+document.addEventListener('DOMContentLoaded', async () => {
+  updateSharedUserLabel();
+  await initSharedMode(false);
+});
+
+</script>
 </head>
 <body>
 <div class="board">
@@ -720,6 +1515,25 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
   </button>
 
 </div>
+
+
+          <!-- ── V2 : CONDUITE DE CRISE ── -->
+          <div class="crisis-strip">
+            <div class="crisis-strip-left">
+              <div class="crisis-strip-kicker">Conduite de crise</div>
+              <div class="crisis-strip-title" id="homeCrisisTitle">Aucune crise active</div>
+              <div class="crisis-strip-meta" id="homeCrisisMeta">Déclenchez une crise pour ouvrir le cockpit et la main courante.</div>
+            </div>
+            <div class="crisis-strip-actions" style="flex-wrap:wrap">
+              <span class="sync-pill local" id="syncStatus">● Mode local</span>
+              <span class="shared-user" id="sharedUserLabel"></span>
+              <button class="sync-btn" onclick="openSyncDialog()">⚙️ Partage</button>
+              <button class="crisis-history-btn" onclick="showPage('p8')">📚 Historique</button>
+              <button class="crisis-open-btn" id="homeCrisisBtn" onclick="showPage('p5')">
+                🚨 Déclencher / ouvrir une crise
+              </button>
+            </div>
+          </div>
 
           <!-- ── RANGÉE 5 : Annuaires + Logigramme ──
                MODIFIER : texte des boutons
@@ -1152,6 +1966,370 @@ onclick="openModal(
         </div><!-- /p4-body -->
       </div><!-- /p4 -->
 
+
+      <!-- ==========================================================
+           PAGE 5 — COCKPIT CRISE ACTIVE
+           ========================================================== -->
+      <div class="page" id="p5">
+        <div class="back-bar">
+          <button class="back-btn" onclick="showPage('p1')">← Retour Accueil</button>
+          <span class="back-bar-title">🚨 Crise active</span>
+        </div>
+        <div class="v2-page-body">
+          <div id="crisisStartView" class="crisis-start-card">
+            <h2>Déclencher une crise</h2>
+            <p>
+              Une seule fiche suffit pour commencer. Les informations détaillées pourront être complétées ensuite
+              par les personnes en renfort, sans formation préalable.
+            </p>
+            <div class="form-grid">
+              <div class="field">
+                <label>Type de crise</label>
+                <select id="startType">
+                  <option>Grève / mouvement social</option>
+                  <option>Blocage accès / transport</option>
+                  <option>Panne DSI</option>
+                  <option>Sinistre</option>
+                  <option>Qualité / retrait</option>
+                  <option>Autre</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Niveau</label>
+                <select id="startLevel">
+                  <option value="1">Niveau 1 — local</option>
+                  <option value="2">Niveau 2 — renforcé</option>
+                  <option value="3">Niveau 3 — majeur</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Intitulé</label>
+                <input id="startTitle" value="Grève Saint-Gilles" placeholder="Ex. Grève Saint-Gilles">
+              </div>
+              <div class="field">
+                <label>Pilote</label>
+                <input id="startPilot" placeholder="Nom / fonction">
+              </div>
+            </div>
+            <div class="v2-actions" style="margin-top:16px;">
+              <button class="v2-primary red" onclick="startCrisis()">🚨 Démarrer la crise</button>
+              <button class="v2-secondary" onclick="showPage('p1')">Annuler</button>
+            </div>
+          </div>
+
+          <div id="crisisActiveView" style="display:none">
+            <div class="v2-head">
+              <div class="v2-title-wrap">
+                <div class="v2-title" id="cockpitTitle">Crise active</div>
+                <div class="v2-subtitle" id="cockpitMeta"></div>
+              </div>
+              <div class="v2-actions">
+                <span class="status-pill active">● Active</span>
+                <button class="v2-secondary" onclick="closeCrisis()">Clôturer la crise</button>
+              </div>
+            </div>
+
+            <div class="kpi-grid">
+              <div class="kpi-card">
+                <div class="kpi-label">Grévistes</div>
+                <div class="kpi-value red" id="kpiStrikers">—</div>
+                <div class="kpi-note">Dernier point de situation</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-label">Colis réalisés / prévus</div>
+                <div class="kpi-value blue" id="kpiParcels">—</div>
+                <div class="kpi-note" id="kpiParcelsNote">—</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-label">Camions bloqués</div>
+                <div class="kpi-value orange" id="kpiTrucks">—</div>
+                <div class="kpi-note">Situation transport</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-label">Palettes à quai</div>
+                <div class="kpi-value green" id="kpiDock">—</div>
+                <div class="kpi-note">Réception</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-label">Préparateurs présents</div>
+                <div class="kpi-value" id="kpiPrep">—</div>
+                <div class="kpi-note">Ressource disponible</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-label">Caristes présents</div>
+                <div class="kpi-value" id="kpiFork">—</div>
+                <div class="kpi-note">Ressource disponible</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-label">Délestage</div>
+                <div class="kpi-value blue" id="kpiRelief">—</div>
+                <div class="kpi-note">Colis affectés à un autre site</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-label">Dernier point</div>
+                <div class="kpi-value" style="font-size:18px" id="kpiLastPoint">—</div>
+                <div class="kpi-note">Horodatage automatique</div>
+              </div>
+            </div>
+
+            <div class="quick-actions">
+              <button class="quick-action event" onclick="showPage('p6')">📝 Ajouter un événement</button>
+              <button class="quick-action point" onclick="showPage('p7')">📊 Faire un point de situation</button>
+              <button class="quick-action report" onclick="generateReporting()">📤 Générer le reporting</button>
+            </div>
+
+            <div class="v2-panel">
+              <h3>Derniers événements</h3>
+              <div id="cockpitEvents" class="event-list"></div>
+            </div>
+
+            <div class="v2-panel" id="reportPanel" style="display:none">
+              <h3>Reporting généré</h3>
+              <div id="reportText" class="report-box"></div>
+              <div class="v2-actions" style="margin-top:10px">
+                <button class="v2-primary green" onclick="copyReporting()">Copier le reporting</button>
+                <button class="v2-secondary" onclick="document.getElementById('reportPanel').style.display='none'">Masquer</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /p5 -->
+
+      <!-- ==========================================================
+           PAGE 6 — MAIN COURANTE
+           ========================================================== -->
+      <div class="page" id="p6">
+        <div class="back-bar">
+          <button class="back-btn" onclick="showPage('p5')">← Retour Cockpit</button>
+          <span class="back-bar-title">📝 Main courante</span>
+        </div>
+        <div class="v2-page-body">
+          <div class="v2-head">
+            <div class="v2-title-wrap">
+              <div class="v2-title">Main courante</div>
+              <div class="v2-subtitle">Une saisie courte : ce qui s'est passé, ce qui a été fait, qui pilote.</div>
+            </div>
+          </div>
+
+          <div class="v2-panel">
+            <h3>Ajouter un événement</h3>
+            <div class="mc-form-grid">
+              <div class="field">
+                <label>Type</label>
+                <select id="evType">
+                  <option>Social</option>
+                  <option>Exploitation</option>
+                  <option>Transport</option>
+                  <option>Réception</option>
+                  <option>DSI</option>
+                  <option>Sécurité</option>
+                  <option>Qualité</option>
+                  <option>Communication</option>
+                  <option>Autre</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Événement</label>
+                <textarea id="evText" placeholder="Ex. Blocage ponctuel de l'entrée PL..."></textarea>
+              </div>
+              <div class="field">
+                <label>Mesure prise</label>
+                <textarea id="evMeasure" placeholder="Ex. Suspension temporaire des entrées, information transport..."></textarea>
+              </div>
+              <div class="field">
+                <label>Responsable / pilote</label>
+                <input id="evOwner" placeholder="Nom ou fonction">
+              </div>
+              <div class="field wide">
+                <label>Impact / précision utile (facultatif)</label>
+                <input id="evImpact" placeholder="Ex. 4 PL en attente, pas d'impact magasin à ce stade">
+              </div>
+            </div>
+            <div class="v2-actions" style="margin-top:13px">
+              <button class="v2-primary" onclick="addEvent()">Enregistrer l'événement</button>
+              <button class="v2-secondary" onclick="clearEventForm()">Effacer</button>
+            </div>
+          </div>
+
+          <div class="v2-panel">
+            <h3>Historique de la crise</h3>
+            <div id="mainEventList" class="event-list"></div>
+          </div>
+        </div>
+      </div><!-- /p6 -->
+
+      <!-- ==========================================================
+           PAGE 7 — POINT DE SITUATION
+           ========================================================== -->
+      <div class="page" id="p7">
+        <div class="back-bar">
+          <button class="back-btn" onclick="showPage('p5')">← Retour Cockpit</button>
+          <span class="back-bar-title">📊 Point de situation</span>
+        </div>
+        <div class="v2-page-body">
+          <div class="v2-head">
+            <div class="v2-title-wrap">
+              <div class="v2-title">Nouveau point de situation</div>
+              <div class="v2-subtitle">Renseigner l'essentiel du point de situation, avec des chapitres dédiés activité, réception et expédition.</div>
+            </div>
+          </div>
+
+          
+<div class="v2-panel">
+            <div class="point-section">
+              <h4>1 — Effectifs</h4>
+              <div class="form-grid">
+                <div class="field"><label>Présents totaux</label><input id="ptPresentTotal" type="number" min="0" placeholder="Ex. 84"></div>
+                <div class="field"><label>Grévistes</label><input id="ptStrikers" type="number" min="0"></div>
+                <div class="field"><label>Absents hors grève</label><input id="ptAbsent" type="number" min="0"></div>
+                <div class="field"><label>CDI / CDD en prépa</label><input id="ptPrepCdi" type="number" min="0" placeholder="Ex. 35"></div>
+                <div class="field"><label>Intérims en prépa</label><input id="ptPrepTemp" type="number" min="0" placeholder="Ex. 49"></div>
+                <div class="field"><label>Dont nouveaux intérims</label><input id="ptNewTemps" type="number" min="0" placeholder="Ex. 15"></div>
+                <div class="field"><label>Caristes zone</label><input id="ptForkZone" type="number" min="0" placeholder="Ex. 16"></div>
+                <div class="field"><label>Caristes réception</label><input id="ptForkReceiving" type="number" min="0" placeholder="Ex. 6"></div>
+                <div class="field"><label>Caristes emballages</label><input id="ptForkPacking" type="number" min="0" placeholder="Ex. 2"></div>
+                <div class="field"><label>Nettoyage</label><input id="ptCleaning" type="number" min="0" placeholder="Ex. 5"></div>
+              </div>
+            </div>
+
+            <div class="point-section">
+              <h4>2 — Activité colis</h4>
+              <div class="form-grid">
+                <div class="field"><label>Volume du jour</label><input id="ptParcelsPlan" type="number" min="0" placeholder="Ex. 146087"></div>
+                <div class="field"><label>Production réalisée</label><input id="ptParcelsDone" type="number" min="0" placeholder="Ex. 113586"></div>
+                <div class="field"><label>Hyper</label><input id="ptHyper" type="number" min="0" placeholder="Ex. 45350"></div>
+                <div class="field"><label>Market</label><input id="ptMarket" type="number" min="0" placeholder="Ex. 62362"></div>
+                <div class="field"><label>Proxi</label><input id="ptProxi" type="number" min="0" placeholder="Ex. 26399"></div>
+                <div class="field"><label>Cash</label><input id="ptCash" type="number" min="0" placeholder="Ex. 6836"></div>
+                <div class="field"><label>Reste colis</label><input id="ptRemaining" type="number" min="0" placeholder="Ex. 87000"></div>
+                <div class="field"><label>Prioritaires échéance</label><input id="ptPriorityRemaining" type="number" min="0" placeholder="Ex. 39630"></div>
+                <div class="field"><label>Délestage colis</label><input id="ptRelief" type="number" min="0"></div>
+                <div class="field"><label>Productivité prépa (facultatif)</label><input id="ptProd" type="number" min="0" step="0.1"></div>
+              </div>
+            </div>
+
+            <div class="point-section">
+              <h4>3 — Réception</h4>
+              <div class="form-grid">
+                <div class="field"><label>Réceptionnaires</label><input id="ptReceivingStaff" type="number" min="0"></div>
+                <div class="field"><label>Caristes réception</label><input id="ptReceivingFork" type="number" min="0"></div>
+                <div class="field"><label>Camions attendus</label><input id="ptReceivingTrucksPlan" type="number" min="0"></div>
+                <div class="field"><label>Camions traités</label><input id="ptReceivingTrucksDone" type="number" min="0"></div>
+                <div class="field"><label>Palettes prévues réception</label><input id="ptRecPlan" type="number" min="0"></div>
+                <div class="field"><label>Palettes réceptionnées</label><input id="ptRecDone" type="number" min="0"></div>
+                <div class="field"><label>Palettes stockées</label><input id="ptStored" type="number" min="0"></div>
+                <div class="field"><label>Reste palettes à quai soir</label><input id="ptDockPallets" type="number" min="0"></div>
+                <div class="field" style="grid-column:1/-1"><label>Observations réception</label><textarea id="ptReceivingObs" placeholder="Ex. Entrée : RAS / vigilance reste à quai..."></textarea></div>
+              </div>
+            </div>
+
+            <div class="point-section">
+              <h4>4 — Expédition</h4>
+              <div class="form-grid">
+                <div class="field"><label>Effectifs expédition</label><input id="ptShippingStaff" type="number" min="0"></div>
+                <div class="field"><label>Caristes zone</label><input id="ptShippingZoneFork" type="number" min="0"></div>
+                <div class="field"><label>Caristes emballages</label><input id="ptShippingPackingFork" type="number" min="0"></div>
+                <div class="field"><label>Nettoyage</label><input id="ptShippingCleaning" type="number" min="0"></div>
+                <div class="field"><label>Camions attendus</label><input id="ptShippingTrucksPlan" type="number" min="0"></div>
+                <div class="field"><label>Camions traités</label><input id="ptShippingTrucksDone" type="number" min="0"></div>
+                <div class="field"><label>Prev BOXS</label><input id="ptPrevBoxs" type="number" min="0"></div>
+                <div class="field"><label>Prev PC (palettes complètes)</label><input id="ptPrevPc" type="number" min="0"></div>
+                <div class="field"><label>Camions bloqués</label><input id="ptBlockedTrucks" type="number" min="0"></div>
+                <div class="field"><label>Camions partis</label><input id="ptDepartedTrucks" type="number" min="0"></div>
+                <div class="field" style="grid-column:1/-1"><label>Observations expédition</label><textarea id="ptShippingObs" placeholder="Ex. Sortie : RAS / activité sur camions de demain 11h00..."></textarea></div>
+              </div>
+            </div>
+
+            <div class="point-section">
+              <h4>5 — Situation</h4>
+              <div class="form-grid">
+                <div class="field">
+                  <label>Blocage</label>
+                  <select id="ptBlocked"><option>Non</option><option>Oui</option></select>
+                </div>
+                <div class="field">
+                  <label>Ambiance</label>
+                  <select id="ptMood">
+                    <option>Calme</option>
+                    <option>Tendue</option>
+                    <option>Dégradée</option>
+                  </select>
+                </div>
+                <div class="field"><label>Entrée</label><input id="ptEntryStatus" placeholder="Ex. RAS"></div>
+                <div class="field"><label>Sortie</label><input id="ptExitStatus" placeholder="Ex. RAS"></div>
+                <div class="field" style="grid-column:1/-1">
+                  <label>Commentaire / risque principal</label>
+                  <textarea id="ptComment" placeholder="Ex. Reste 87 000 colis dont 39 630 prioritaires pour lundi 06h00..."></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div class="v2-actions" style="margin-top:16px">
+              <button class="v2-primary" onclick="saveSituationPoint()">Enregistrer le point</button>
+              <button class="v2-secondary" onclick="showPage('p5')">Annuler</button>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /p7 -->
+
+
+
+      <!-- ==========================================================
+           PAGE 8 — HISTORIQUE DES CRISES
+           ========================================================== -->
+      <div class="page" id="p8">
+        <div class="back-bar">
+          <button class="back-btn" onclick="showPage('p1')">← Retour Accueil</button>
+          <span class="back-bar-title">📚 Historique des crises</span>
+        </div>
+        <div class="v2-page-body">
+          <div id="archiveListView">
+            <div class="v2-head">
+              <div class="v2-title-wrap">
+                <div class="v2-title">Historique des crises</div>
+                <div class="v2-subtitle">Les crises clôturées sont conservées et consultables en lecture seule.</div>
+              </div>
+            </div>
+            <div class="v2-panel">
+              <div id="archiveList" class="archive-list"></div>
+            </div>
+          </div>
+
+          <div id="archiveDetailView" style="display:none">
+            <div class="archive-detail-head">
+              <div>
+                <div class="v2-title" id="archiveTitle">Crise archivée</div>
+                <div class="v2-subtitle" id="archiveMeta"></div>
+              </div>
+              <button class="v2-secondary" onclick="backToArchiveList()">← Retour à l'historique</button>
+            </div>
+
+            <div class="archive-kpis">
+              <div class="archive-kpi"><div class="lab">Durée</div><div class="val" id="archDuration">—</div></div>
+              <div class="archive-kpi"><div class="lab">Points situation</div><div class="val" id="archPoints">—</div></div>
+              <div class="archive-kpi"><div class="lab">Événements</div><div class="val" id="archEvents">—</div></div>
+              <div class="archive-kpi"><div class="lab">Dernier volume réalisé</div><div class="val" id="archLastVolume">—</div></div>
+            </div>
+
+            <div class="v2-panel">
+              <h3>Dernier point de situation</h3>
+              <div id="archiveLastPoint"></div>
+            </div>
+
+            <div class="v2-panel">
+              <h3>Main courante</h3>
+              <div id="archiveEventsList" class="event-list"></div>
+            </div>
+
+            <div class="v2-panel">
+              <h3>Points de situation</h3>
+              <div id="archivePointsList"></div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /p8 -->
+
     </div><!-- /content-area -->
   </div><!-- /layout -->
 
@@ -1225,6 +2403,1189 @@ function openModal(title, text, items, supportUrl = null) {
 
   modal.showModal();
 }
+
+// ================================================================
+// V2 — stockage local et conduite de crise
+// ================================================================
+const CRISIS_KEY = 'sg_crisis_v3'; // conservé pour récupérer les tests V3
+
+function loadCrisisData() {
+  let data;
+  try {
+    data = JSON.parse(localStorage.getItem(CRISIS_KEY)) || null;
+  } catch(e) {
+    data = null;
+  }
+
+  if (!data) {
+    data = { active:false, crisis:null, events:[], points:[], archives:[] };
+  }
+
+  if (!Array.isArray(data.events)) data.events = [];
+  if (!Array.isArray(data.points)) data.points = [];
+  if (!Array.isArray(data.archives)) data.archives = [];
+
+  // Migration automatique V3 -> V4 :
+  // si une crise a été clôturée dans la V3 mais n'avait pas encore d'archive,
+  // on la déplace une seule fois dans l'historique.
+  if (!data.active && data.crisis && data.crisis.endedAt) {
+    const alreadyArchived = data.archives.some(a => a.crisis && a.crisis.id === data.crisis.id);
+    if (!alreadyArchived) {
+      data.archives.push({
+        archiveId: 'AR-' + Date.now(),
+        crisis: data.crisis,
+        events: data.events || [],
+        points: data.points || [],
+        archivedAt: data.crisis.endedAt || nowIso()
+      });
+    }
+    data.crisis = null;
+    data.events = [];
+    data.points = [];
+    localStorage.setItem(CRISIS_KEY, JSON.stringify(data));
+  }
+
+  return data;
+}
+
+function saveCrisisData(data) {
+  localStorage.setItem(CRISIS_KEY, JSON.stringify(data));
+  refreshCrisisUI();
+}
+
+function nowIso() { return new Date().toISOString(); }
+
+function fmtDateTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit'}) + ' ' +
+         d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+}
+
+function fmtNumber(v) {
+  if (v === null || v === undefined || v === '') return '—';
+  const n = Number(v);
+  return Number.isFinite(n) ? n.toLocaleString('fr-FR') : '—';
+}
+
+function val(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+function num(id) {
+  const v = val(id);
+  return v === '' ? null : Number(v);
+}
+
+function startCrisis() {
+  const data = loadCrisisData();
+  if (data.active && data.crisis) {
+    alert('Une crise est déjà active. Clôturez-la avant d’en démarrer une nouvelle.');
+    showPage('p5');
+    return;
+  }
+  const title = val('startTitle') || val('startType') || 'Crise Saint-Gilles';
+  const pilot = val('startPilot') || 'À renseigner';
+  data.active = true;
+  data.crisis = {
+    id: 'CR-' + Date.now(),
+    type: val('startType'),
+    level: val('startLevel'),
+    title, pilot,
+    startedAt: nowIso(),
+    endedAt: null
+  };
+  data.events = [];
+  data.points = [];
+  if (!Array.isArray(data.archives)) data.archives = [];
+  saveCrisisData(data);
+  showPage('p5');
+}
+
+function closeCrisis() {
+  const data = loadCrisisData();
+  if (!data.active || !data.crisis) return;
+  if (!confirm('Clôturer cette crise ? Elle sera conservée dans l’historique en lecture seule.')) return;
+
+  data.crisis.endedAt = nowIso();
+  if (!Array.isArray(data.archives)) data.archives = [];
+  data.archives.push({
+    archiveId:'AR-' + Date.now(),
+    crisis: JSON.parse(JSON.stringify(data.crisis)),
+    events: JSON.parse(JSON.stringify(data.events || [])),
+    points: JSON.parse(JSON.stringify(data.points || [])),
+    archivedAt: data.crisis.endedAt
+  });
+
+  data.active = false;
+  data.crisis = null;
+  data.events = [];
+  data.points = [];
+  saveCrisisData(data);
+  showPage('p8');
+}
+
+function addEvent() {
+  const data = loadCrisisData();
+  if (!data.active) { alert('Aucune crise active.'); return; }
+  const text = val('evText');
+  if (!text) { alert("Renseignez l'événement."); return; }
+  data.events.push({
+    id:'EV-' + Date.now(),
+    at: nowIso(),
+    type: val('evType'),
+    text,
+    measure: val('evMeasure'),
+    owner: val('evOwner'),
+    impact: val('evImpact')
+  });
+  saveCrisisData(data);
+  clearEventForm();
+  renderEvents();
+  renderArchives();
+}
+
+function clearEventForm() {
+  ['evText','evMeasure','evOwner','evImpact'].forEach(id => {
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+}
+
+
+function saveSituationPoint() {
+  const data = loadCrisisData();
+  if (!data.active) { alert('Aucune crise active.'); return; }
+  const p = {
+    id:'PT-' + Date.now(),
+    at:nowIso(),
+
+    presentTotal:num('ptPresentTotal'),
+    strikers:num('ptStrikers'),
+    absent:num('ptAbsent'),
+    prepCdi:num('ptPrepCdi'),
+    prepTemp:num('ptPrepTemp'),
+    newTemps:num('ptNewTemps'),
+    forkZone:num('ptForkZone'),
+    forkReceiving:num('ptForkReceiving'),
+    forkPacking:num('ptForkPacking'),
+    cleaning:num('ptCleaning'),
+
+    parcelsPlan:num('ptParcelsPlan'),
+    parcelsDone:num('ptParcelsDone'),
+    hyper:num('ptHyper'),
+    market:num('ptMarket'),
+    proxi:num('ptProxi'),
+    cash:num('ptCash'),
+    remaining:num('ptRemaining'),
+    priorityRemaining:num('ptPriorityRemaining'),
+    relief:num('ptRelief'),
+    prod:num('ptProd'),
+
+    receivingStaff:num('ptReceivingStaff'),
+    receivingFork:num('ptReceivingFork'),
+    receivingTrucksPlan:num('ptReceivingTrucksPlan'),
+    receivingTrucksDone:num('ptReceivingTrucksDone'),
+    recPlan:num('ptRecPlan'),
+    recDone:num('ptRecDone'),
+    stored:num('ptStored'),
+    dockPallets:num('ptDockPallets'),
+    receivingObs:val('ptReceivingObs'),
+
+    shippingStaff:num('ptShippingStaff'),
+    shippingZoneFork:num('ptShippingZoneFork'),
+    shippingPackingFork:num('ptShippingPackingFork'),
+    shippingCleaning:num('ptShippingCleaning'),
+    shippingTrucksPlan:num('ptShippingTrucksPlan'),
+    shippingTrucksDone:num('ptShippingTrucksDone'),
+    prevBoxs:num('ptPrevBoxs'),
+    prevPc:num('ptPrevPc'),
+    blockedTrucks:num('ptBlockedTrucks'),
+    departedTrucks:num('ptDepartedTrucks'),
+    shippingObs:val('ptShippingObs'),
+
+    blocked:val('ptBlocked'),
+    mood:val('ptMood'),
+    entryStatus:val('ptEntryStatus'),
+    exitStatus:val('ptExitStatus'),
+    comment:val('ptComment')
+  };
+
+  // Compatibilité cockpit
+  p.prep = (p.prepCdi || 0) + (p.prepTemp || 0);
+  p.fork = (p.forkZone || 0) + (p.forkReceiving || 0) + (p.forkPacking || 0);
+
+  data.points.push(p);
+  data.events.push({
+    id:'EV-' + Date.now() + '-pt',
+    at:p.at, type:'Point situation',
+    text:'Point de situation enregistré',
+    measure:p.comment || '',
+    owner:data.crisis ? data.crisis.pilot : '',
+    impact:''
+  });
+  saveCrisisData(data);
+  clearPointForm();
+  showPage('p5');
+}
+
+
+
+function clearPointForm() {
+  [
+    'ptPresentTotal','ptStrikers','ptAbsent','ptPrepCdi','ptPrepTemp','ptNewTemps',
+    'ptForkZone','ptForkReceiving','ptForkPacking','ptCleaning',
+    'ptParcelsPlan','ptParcelsDone','ptHyper','ptMarket','ptProxi','ptCash',
+    'ptRemaining','ptPriorityRemaining','ptRelief','ptProd',
+    'ptReceivingStaff','ptReceivingFork','ptReceivingTrucksPlan','ptReceivingTrucksDone',
+    'ptRecPlan','ptRecDone','ptStored','ptDockPallets','ptReceivingObs',
+    'ptShippingStaff','ptShippingZoneFork','ptShippingPackingFork','ptShippingCleaning',
+    'ptShippingTrucksPlan','ptShippingTrucksDone','ptPrevBoxs','ptPrevPc',
+    'ptBlockedTrucks','ptDepartedTrucks','ptShippingObs',
+    'ptEntryStatus','ptExitStatus','ptComment'
+  ].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  const b=document.getElementById('ptBlocked'); if(b) b.value='Non';
+  const m=document.getElementById('ptMood'); if(m) m.value='Calme';
+}
+
+
+function latestPoint(data) {
+  return data.points && data.points.length ? data.points[data.points.length-1] : null;
+}
+
+function refreshCrisisUI() {
+  const data = loadCrisisData();
+  const titleEl = document.getElementById('homeCrisisTitle');
+  const metaEl = document.getElementById('homeCrisisMeta');
+  const btnEl = document.getElementById('homeCrisisBtn');
+
+  if (titleEl && metaEl && btnEl) {
+    if (data.active && data.crisis) {
+      titleEl.textContent = '🔴 ' + data.crisis.title;
+      metaEl.textContent = 'Active depuis ' + fmtDateTime(data.crisis.startedAt) + ' · Pilote : ' + data.crisis.pilot;
+      btnEl.textContent = '🚨 Ouvrir le cockpit';
+    } else {
+      titleEl.textContent = 'Aucune crise active';
+      metaEl.textContent = 'Déclenchez une crise pour ouvrir le cockpit et la main courante.';
+      btnEl.textContent = '🚨 Déclencher / ouvrir une crise';
+    }
+  }
+
+  const startView=document.getElementById('crisisStartView');
+  const activeView=document.getElementById('crisisActiveView');
+  if (startView && activeView) {
+    startView.style.display = data.active ? 'none' : 'block';
+    activeView.style.display = data.active ? 'block' : 'none';
+  }
+
+  if (data.active && data.crisis) {
+    const ct=document.getElementById('cockpitTitle');
+    const cm=document.getElementById('cockpitMeta');
+    if(ct) ct.textContent=data.crisis.title;
+    if(cm) cm.textContent =
+      data.crisis.type + ' · Niveau ' + data.crisis.level +
+      ' · Début ' + fmtDateTime(data.crisis.startedAt) +
+      ' · Pilote : ' + data.crisis.pilot;
+
+    
+const p=latestPoint(data);
+    setText('kpiStrikers', p ? fmtNumber(p.strikers) : '—');
+    setText('kpiPrep', p ? fmtNumber((p.prepCdi || 0) + (p.prepTemp || 0)) : '—');
+    setText('kpiFork', p ? fmtNumber((p.forkZone || 0) + (p.forkReceiving || 0) + (p.forkPacking || 0)) : '—');
+    setText('kpiTrucks', p ? fmtNumber(p.blockedTrucks) : '—');
+    setText('kpiDock', p ? fmtNumber(p.dockPallets) : '—');
+    setText('kpiRelief', p ? fmtNumber(p.relief) : '—');
+    setText('kpiLastPoint', p ? fmtDateTime(p.at) : 'Aucun');
+    if (p) {
+      setText('kpiParcels', fmtNumber(p.parcelsDone));
+      setText('kpiParcelsNote', 'Volume du jour : ' + fmtNumber(p.parcelsPlan));
+    } else {
+      setText('kpiParcels', '—'); setText('kpiParcelsNote','Aucun point enregistré');
+    }
+  }
+
+  renderEvents();
+}
+
+
+function setText(id, value) {
+  const el=document.getElementById(id); if(el) el.textContent=value;
+}
+
+function renderEvents() {
+  const data=loadCrisisData();
+  const lists=[document.getElementById('cockpitEvents'), document.getElementById('mainEventList')];
+  lists.forEach((list,idx)=>{
+    if(!list) return;
+    list.innerHTML='';
+    const source=(data.events || []).slice().reverse();
+    const rows = idx===0 ? source.slice(0,5) : source;
+    if(!rows.length) {
+      list.innerHTML='<div class="empty-state">Aucun événement enregistré pour le moment.</div>';
+      return;
+    }
+    rows.forEach(e=>{
+      const row=document.createElement('div'); row.className='event-row';
+      const time=document.createElement('div'); time.className='event-time'; time.textContent=fmtDateTime(e.at);
+      const type=document.createElement('div'); type.className='event-type'; type.textContent=e.type || 'Événement';
+      const text=document.createElement('div'); text.className='event-text';
+      text.innerHTML='<strong>'+escapeHtml(e.text || '')+'</strong>' +
+        (e.measure ? '<br><span style="color:#5c6872">Mesure : '+escapeHtml(e.measure)+'</span>' : '') +
+        (e.impact ? '<br><span style="color:#7d8790">Impact : '+escapeHtml(e.impact)+'</span>' : '');
+      const own=document.createElement('div'); own.className='event-owner';
+      const trace=[];
+      if(e.authorName) trace.push('Saisi par : '+e.authorName+(e.authorRole ? ' · '+e.authorRole : ''));
+      if(e.owner) trace.push('Pilote : '+e.owner);
+      own.textContent=trace.join(' | ');
+      row.append(time,type,text,own); list.appendChild(row);
+    });
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+}
+
+
+function generateReporting() {
+  const data=loadCrisisData();
+  if(!data.active || !data.crisis) { alert('Aucune crise active.'); return; }
+  const p=latestPoint(data);
+  if(!p) { alert('Enregistrez d’abord un point de situation.'); return; }
+
+  const lines = [
+    'POINT DE SITUATION — ' + fmtDateTime(p.at),
+    data.crisis.title + ' · Niveau ' + data.crisis.level,
+    '',
+    'GRÉVISTES : ' + (p.strikers !== null ? fmtNumber(p.strikers) : 'piquet levé / non renseigné'),
+    'BLOCAGE : ' + (p.blocked === 'Oui' ? 'Site bloqué' : 'Site ouvert - pas de blocage'),
+    '',
+    'ENTRÉE : ' + (p.entryStatus || 'RAS'),
+    'SORTIE : ' + (p.exitStatus || 'RAS'),
+    '',
+    'LES PRÉSENTS SONT : ' + fmtNumber(p.presentTotal),
+    'CDI / CDD en prep : ' + fmtNumber(p.prepCdi),
+    'Intérims en prep : ' + fmtNumber(p.prepTemp) + (p.newTemps !== null ? ' (dont ' + fmtNumber(p.newTemps) + ' nouveaux)' : ''),
+    'Caristes zone : ' + fmtNumber(p.forkZone),
+    'Caristes Réception : ' + fmtNumber(p.forkReceiving),
+    'Caristes emballages : ' + fmtNumber(p.forkPacking),
+    'Nettoyage : ' + fmtNumber(p.cleaning),
+    '',
+    'ACTIVITÉ - COLIS',
+    'Production / Capacité : ' + fmtNumber(p.parcelsDone),
+    'Volume du jour : ' + fmtNumber(p.parcelsPlan),
+    'Hyper : ' + fmtNumber(p.hyper),
+    'Market : ' + fmtNumber(p.market),
+    'Proxi : ' + fmtNumber(p.proxi),
+    'Cash : ' + fmtNumber(p.cash)
+  ];
+
+  if (p.remaining !== null || p.priorityRemaining !== null) {
+    lines.push('Reste : ' + fmtNumber(p.remaining) + (p.priorityRemaining !== null ? ' (dont ' + fmtNumber(p.priorityRemaining) + ' prioritaires)' : ''));
+  }
+  if (p.relief !== null) {
+    lines.push('Délestage : ' + fmtNumber(p.relief) + ' colis');
+  }
+
+  lines.push(
+    '',
+    'RÉCEPTION',
+    'Effectifs : ' + fmtNumber(p.receivingStaff) + ' réceptionnaires / ' + fmtNumber(p.receivingFork) + ' caristes',
+    'Camions : ' + fmtNumber(p.receivingTrucksDone) + ' traités / ' + fmtNumber(p.receivingTrucksPlan) + ' attendus',
+    'Palettes : ' + fmtNumber(p.recDone) + ' réceptionnées / ' + fmtNumber(p.recPlan) + ' prévues',
+    'Palettes stockées : ' + fmtNumber(p.stored),
+    'Reste palettes à quai soir : ' + fmtNumber(p.dockPallets)
+  );
+  if (p.receivingObs) {
+    lines.push('Observations réception : ' + p.receivingObs);
+  }
+
+  lines.push(
+    '',
+    'EXPÉDITION',
+    'Effectifs : ' + fmtNumber(p.shippingStaff) + ' expédition / ' + fmtNumber(p.shippingZoneFork) + ' caristes zone / ' + fmtNumber(p.shippingPackingFork) + ' caristes emballages / ' + fmtNumber(p.shippingCleaning) + ' nettoyage',
+    'Camions : ' + fmtNumber(p.shippingTrucksDone) + ' traités / ' + fmtNumber(p.shippingTrucksPlan) + ' attendus',
+    'Prev BOXS : ' + fmtNumber(p.prevBoxs),
+    'Prev PC (palettes complètes) : ' + fmtNumber(p.prevPc),
+    'Camions bloqués : ' + fmtNumber(p.blockedTrucks),
+    'Camions partis : ' + fmtNumber(p.departedTrucks)
+  );
+  if (p.shippingObs) {
+    lines.push('Observations expédition : ' + p.shippingObs);
+  }
+
+  lines.push(
+    '',
+    'SITUATION',
+    'Ambiance : ' + (p.mood || '—'),
+    'Commentaires : ' + (p.comment || 'RAS')
+  );
+
+  setText('reportText', lines.join('\n'));
+  const panel=document.getElementById('reportPanel');
+  if(panel) { panel.style.display='block'; panel.scrollIntoView({behavior:'smooth', block:'start'}); }
+}
+
+
+
+function durationText(startIso, endIso) {
+  if (!startIso || !endIso) return '—';
+  const ms = Math.max(0, new Date(endIso) - new Date(startIso));
+  const mins = Math.round(ms / 60000);
+  const days = Math.floor(mins / 1440);
+  const hours = Math.floor((mins % 1440) / 60);
+  const rem = mins % 60;
+  if (days) return days + ' j ' + hours + ' h';
+  if (hours) return hours + ' h ' + rem + ' min';
+  return rem + ' min';
+}
+
+function renderArchives() {
+  const data = loadCrisisData();
+  const list = document.getElementById('archiveList');
+  if (!list) return;
+
+  list.innerHTML = '';
+  const archives = (data.archives || []).slice().sort((a,b) =>
+    new Date((b.crisis && b.crisis.endedAt) || b.archivedAt || 0) -
+    new Date((a.crisis && a.crisis.endedAt) || a.archivedAt || 0)
+  );
+
+  if (!archives.length) {
+    list.innerHTML = '<div class="empty-state">Aucune crise clôturée pour le moment.</div>';
+    return;
+  }
+
+  archives.forEach((a, idx) => {
+    const c = a.crisis || {};
+    const card = document.createElement('div');
+    card.className = 'archive-card';
+
+    const left = document.createElement('div');
+    const title = document.createElement('div');
+    title.className = 'archive-card-title';
+    title.textContent = c.title || 'Crise archivée';
+
+    const meta = document.createElement('div');
+    meta.className = 'archive-card-meta';
+    meta.textContent =
+      (c.type || 'Crise') + ' · Niveau ' + (c.level || '—') +
+      ' · ' + fmtDateTime(c.startedAt) + ' → ' + fmtDateTime(c.endedAt) +
+      ' · Pilote : ' + (c.pilot || '—');
+
+    const stats = document.createElement('div');
+    stats.className = 'archive-card-stats';
+    stats.textContent =
+      (a.points || []).length + ' point(s) de situation · ' +
+      (a.events || []).length + ' événement(s) · Durée : ' +
+      durationText(c.startedAt, c.endedAt);
+
+    left.append(title, meta, stats);
+
+    const btn = document.createElement('button');
+    btn.className = 'archive-open-btn';
+    btn.textContent = 'Ouvrir';
+    btn.onclick = () => openArchive(a.archiveId);
+
+    card.append(left, btn);
+    list.appendChild(card);
+  });
+}
+
+function openArchive(archiveId) {
+  const data = loadCrisisData();
+  const a = (data.archives || []).find(x => x.archiveId === archiveId);
+  if (!a) return;
+
+  document.getElementById('archiveListView').style.display = 'none';
+  document.getElementById('archiveDetailView').style.display = 'block';
+
+  const c = a.crisis || {};
+  setText('archiveTitle', c.title || 'Crise archivée');
+  setText('archiveMeta',
+    (c.type || 'Crise') + ' · Niveau ' + (c.level || '—') +
+    ' · ' + fmtDateTime(c.startedAt) + ' → ' + fmtDateTime(c.endedAt) +
+    ' · Pilote : ' + (c.pilot || '—')
+  );
+  setText('archDuration', durationText(c.startedAt, c.endedAt));
+  setText('archPoints', String((a.points || []).length));
+  setText('archEvents', String((a.events || []).length));
+
+  const lp = (a.points || []).length ? a.points[a.points.length - 1] : null;
+  setText('archLastVolume', lp ? fmtNumber(lp.parcelsDone) : '—');
+
+  const lastPointBox = document.getElementById('archiveLastPoint');
+  if (lastPointBox) {
+    if (!lp) {
+      lastPointBox.innerHTML = '<div class="empty-state">Aucun point de situation enregistré.</div>';
+    } else {
+      lastPointBox.innerHTML =
+        '<div class="archive-point"><strong>' + escapeHtml(fmtDateTime(lp.at)) + '</strong><br>' +
+        'Présents : ' + escapeHtml(fmtNumber(lp.presentTotal)) +
+        ' · Grévistes : ' + escapeHtml(fmtNumber(lp.strikers)) +
+        ' · Colis : ' + escapeHtml(fmtNumber(lp.parcelsDone)) +
+        ' / ' + escapeHtml(fmtNumber(lp.parcelsPlan)) +
+        ' · Camions bloqués : ' + escapeHtml(fmtNumber(lp.blockedTrucks)) +
+        ' · Palettes à quai : ' + escapeHtml(fmtNumber(lp.dockPallets)) +
+        (lp.comment ? '<br><span style="color:#596b7a">' + escapeHtml(lp.comment) + '</span>' : '') +
+        '</div>';
+    }
+  }
+
+  const evList = document.getElementById('archiveEventsList');
+  if (evList) {
+    evList.innerHTML = '';
+    const evs = (a.events || []).slice().reverse();
+    if (!evs.length) {
+      evList.innerHTML = '<div class="empty-state">Aucun événement enregistré.</div>';
+    } else {
+      evs.forEach(e => {
+        const row=document.createElement('div'); row.className='event-row';
+        const time=document.createElement('div'); time.className='event-time'; time.textContent=fmtDateTime(e.at);
+        const type=document.createElement('div'); type.className='event-type'; type.textContent=e.type || 'Événement';
+        const text=document.createElement('div'); text.className='event-text';
+        text.innerHTML='<strong>'+escapeHtml(e.text || '')+'</strong>' +
+          (e.measure ? '<br><span style="color:#5c6872">Mesure : '+escapeHtml(e.measure)+'</span>' : '') +
+          (e.impact ? '<br><span style="color:#7d8790">Impact : '+escapeHtml(e.impact)+'</span>' : '');
+        const own=document.createElement('div'); own.className='event-owner';
+      const trace=[];
+      if(e.authorName) trace.push('Saisi par : '+e.authorName+(e.authorRole ? ' · '+e.authorRole : ''));
+      if(e.owner) trace.push('Pilote : '+e.owner);
+      own.textContent=trace.join(' | ');
+        row.append(time,type,text,own); evList.appendChild(row);
+      });
+    }
+  }
+
+  const ptList = document.getElementById('archivePointsList');
+  if (ptList) {
+    ptList.innerHTML = '';
+    const pts = (a.points || []).slice().reverse();
+    if (!pts.length) {
+      ptList.innerHTML = '<div class="empty-state">Aucun point de situation enregistré.</div>';
+    } else {
+      pts.forEach(p => {
+        const div=document.createElement('div'); div.className='archive-point';
+        div.innerHTML =
+          '<strong>'+escapeHtml(fmtDateTime(p.at))+'</strong> — ' +
+          'Présents '+escapeHtml(fmtNumber(p.presentTotal))+
+          ' · Grévistes '+escapeHtml(fmtNumber(p.strikers))+
+          ' · Hyper '+escapeHtml(fmtNumber(p.hyper))+
+          ' · Market '+escapeHtml(fmtNumber(p.market))+
+          ' · Proxi '+escapeHtml(fmtNumber(p.proxi))+
+          ' · Cash '+escapeHtml(fmtNumber(p.cash))+
+          '<br>Réception : '+escapeHtml(fmtNumber(p.receivingTrucksDone))+'/'+escapeHtml(fmtNumber(p.receivingTrucksPlan))+' camions' +
+          ' · Expédition : '+escapeHtml(fmtNumber(p.shippingTrucksDone))+'/'+escapeHtml(fmtNumber(p.shippingTrucksPlan))+' camions' +
+          (p.comment ? '<br><span style="color:#596b7a">'+escapeHtml(p.comment)+'</span>' : '');
+        ptList.appendChild(div);
+      });
+    }
+  }
+}
+
+function backToArchiveList() {
+  document.getElementById('archiveDetailView').style.display = 'none';
+  document.getElementById('archiveListView').style.display = 'block';
+  renderArchives();
+}
+
+
+function copyReporting() {
+  const txt=document.getElementById('reportText')?.textContent || '';
+  if(!txt) return;
+  navigator.clipboard.writeText(txt).then(()=>alert('Reporting copié.')).catch(()=>{
+    const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); ta.remove(); alert('Reporting copié.');
+  });
+}
+
+// Rend la navigation compatible avec les pages V2 sans onglet latéral.
+const oldShowPage = showPage;
+showPage = function(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('visible'));
+  document.querySelectorAll('.tab-inter').forEach(b => b.classList.remove('active'));
+  const page=document.getElementById(id);
+  if(page) page.classList.add('visible');
+  if(id === 'p8') {
+    const lv=document.getElementById('archiveListView');
+    const dv=document.getElementById('archiveDetailView');
+    if(lv) lv.style.display='block';
+    if(dv) dv.style.display='none';
+    renderArchives();
+  }
+  const tab=document.querySelector('.tab-inter[data-page="' + id + '"]');
+  if(tab) tab.classList.add('active');
+  refreshCrisisUI();
+};
+
+document.addEventListener('DOMContentLoaded', refreshCrisisUI);
+
+
+// ================================================================
+// V5 — MODE PARTAGÉ SUPABASE / TEMPS RÉEL
+// ================================================================
+const SYNC_CONFIG_KEY = 'sg_supabase_config_v1';
+const IDENTITY_KEY = 'sg_crisis_identity_v1';
+
+let sharedClient = null;
+let sharedConnected = false;
+let sharedChannel = null;
+let remoteReloadTimer = null;
+
+// Valeurs laissées vides dans la version TEST.
+// Elles pourront être intégrées directement dans la version PROD.
+const DEFAULT_SUPABASE_URL = '';
+const DEFAULT_SUPABASE_KEY = '';
+
+function readSyncConfig() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SYNC_CONFIG_KEY) || '{}');
+    return {
+      url: saved.url || DEFAULT_SUPABASE_URL || '',
+      key: saved.key || DEFAULT_SUPABASE_KEY || ''
+    };
+  } catch(e) {
+    return {url:DEFAULT_SUPABASE_URL || '', key:DEFAULT_SUPABASE_KEY || ''};
+  }
+}
+
+function readIdentity() {
+  try { return JSON.parse(localStorage.getItem(IDENTITY_KEY) || '{}'); }
+  catch(e) { return {}; }
+}
+
+function saveIdentity(name, role) {
+  localStorage.setItem(IDENTITY_KEY, JSON.stringify({name:name || '', role:role || ''}));
+  updateSharedUserLabel();
+}
+
+function updateSharedUserLabel() {
+  const i = readIdentity();
+  const el = document.getElementById('sharedUserLabel');
+  if (el) el.textContent = i.name ? ('👤 ' + i.name + (i.role ? ' · ' + i.role : '')) : '';
+}
+
+function setSyncStatus(mode, text) {
+  const el = document.getElementById('syncStatus');
+  if (!el) return;
+  el.className = 'sync-pill ' + mode;
+  el.textContent = text;
+}
+
+function setSyncMessage(text, ok=false) {
+  const el = document.getElementById('syncMessage');
+  if (!el) return;
+  el.className = 'sync-msg ' + (ok ? 'ok' : (text ? 'err' : ''));
+  el.textContent = text || '';
+}
+
+function openSyncDialog() {
+  const cfg = readSyncConfig();
+  const id = readIdentity();
+  const d = document.getElementById('syncDialog');
+  if (!d) return;
+  document.getElementById('syncName').value = id.name || '';
+  document.getElementById('syncRole').value = id.role || '';
+  document.getElementById('syncUrl').value = cfg.url || '';
+  document.getElementById('syncKey').value = cfg.key || '';
+  setSyncMessage(sharedConnected ? 'Connexion partagée active.' : '');
+  d.showModal();
+}
+
+function closeSyncDialog() {
+  const d = document.getElementById('syncDialog');
+  if (d) d.close();
+}
+
+function saveIdentityOnly() {
+  const name = val('syncName');
+  const role = val('syncRole');
+  if (!name) { setSyncMessage('Renseignez votre nom.'); return; }
+  saveIdentity(name, role);
+  setSyncMessage('Identité enregistrée sur ce poste.', true);
+}
+
+async function saveAndConnectShared() {
+  const name = val('syncName');
+  const role = val('syncRole');
+  const url = val('syncUrl');
+  const key = val('syncKey');
+
+  if (!name) { setSyncMessage('Renseignez votre nom.'); return; }
+  if (!url || !key) { setSyncMessage('Renseignez l’URL du projet Supabase et la Publishable Key.'); return; }
+
+  saveIdentity(name, role);
+  localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify({url, key}));
+  setSyncMessage('Connexion en cours...');
+  const ok = await initSharedMode(true);
+  if (ok) {
+    setSyncMessage('Mode partagé activé. Les mises à jour sont maintenant synchronisées.', true);
+    setTimeout(closeSyncDialog, 700);
+  }
+}
+
+function ensureIdentityForWrite() {
+  const i = readIdentity();
+  if (!i.name) {
+    openSyncDialog();
+    setSyncMessage('Renseignez votre nom avant d’enregistrer une information.');
+    return false;
+  }
+  return true;
+}
+
+async function ensureAnonymousSession() {
+  const { data: sessionData, error: sessionError } = await sharedClient.auth.getSession();
+  if (sessionError) throw sessionError;
+  if (sessionData && sessionData.session) return sessionData.session;
+
+  const { data, error } = await sharedClient.auth.signInAnonymously();
+  if (error) throw error;
+  return data.session;
+}
+
+function mapCrisisRow(c) {
+  if (!c) return null;
+  return {
+    id:c.id,
+    type:c.type,
+    level:c.level,
+    title:c.title,
+    pilot:c.pilot,
+    startedAt:c.started_at,
+    endedAt:c.ended_at
+  };
+}
+
+function mapEventRow(e) {
+  return {
+    id:e.id,
+    at:e.event_at,
+    type:e.type,
+    text:e.event_text,
+    measure:e.measure,
+    owner:e.owner,
+    impact:e.impact,
+    authorName:e.author_name,
+    authorRole:e.author_role
+  };
+}
+
+function mapPointRow(p) {
+  const obj = Object.assign({}, p.data || {});
+  obj.id = p.id;
+  obj.at = p.point_at;
+  obj.authorName = p.author_name;
+  obj.authorRole = p.author_role;
+  return obj;
+}
+
+function writeCacheNoRefresh(data) {
+  localStorage.setItem(CRISIS_KEY, JSON.stringify(data));
+}
+
+// V5 : lecture du cache sans déclencher la migration V3/V4
+loadCrisisData = function() {
+  try {
+    const d = JSON.parse(localStorage.getItem(CRISIS_KEY) || 'null');
+    if (d) {
+      if (!Array.isArray(d.events)) d.events=[];
+      if (!Array.isArray(d.points)) d.points=[];
+      if (!Array.isArray(d.archives)) d.archives=[];
+      return d;
+    }
+  } catch(e) {}
+  return {active:false, crisis:null, events:[], points:[], archives:[]};
+};
+
+saveCrisisData = function(data) {
+  writeCacheNoRefresh(data);
+  refreshCrisisUI();
+  renderArchives();
+};
+
+async function remoteReloadAll(flash=true) {
+  if (!sharedConnected || !sharedClient) return;
+
+  try {
+    const { data: crises, error: ce } = await sharedClient
+      .from('crises')
+      .select('*')
+      .order('started_at', {ascending:false})
+      .limit(50);
+    if (ce) throw ce;
+
+    const activeRow = (crises || []).find(c => c.status === 'active') || null;
+    const closedRows = (crises || []).filter(c => c.status === 'closed');
+
+    const crisisIds = (crises || []).map(c => c.id);
+    let eventRows = [], pointRows = [];
+
+    if (crisisIds.length) {
+      const er = await sharedClient
+        .from('crisis_events')
+        .select('*')
+        .in('crisis_id', crisisIds)
+        .order('event_at', {ascending:true});
+      if (er.error) throw er.error;
+      eventRows = er.data || [];
+
+      const pr = await sharedClient
+        .from('situation_points')
+        .select('*')
+        .in('crisis_id', crisisIds)
+        .order('point_at', {ascending:true});
+      if (pr.error) throw pr.error;
+      pointRows = pr.data || [];
+    }
+
+    const eventsByCrisis = {};
+    eventRows.forEach(e => {
+      (eventsByCrisis[e.crisis_id] ||= []).push(mapEventRow(e));
+    });
+    const pointsByCrisis = {};
+    pointRows.forEach(p => {
+      (pointsByCrisis[p.crisis_id] ||= []).push(mapPointRow(p));
+    });
+
+    const cache = {
+      active: !!activeRow,
+      crisis: activeRow ? mapCrisisRow(activeRow) : null,
+      events: activeRow ? (eventsByCrisis[activeRow.id] || []) : [],
+      points: activeRow ? (pointsByCrisis[activeRow.id] || []) : [],
+      archives: closedRows.map(c => ({
+        archiveId:'AR-' + c.id,
+        crisis:mapCrisisRow(c),
+        events:eventsByCrisis[c.id] || [],
+        points:pointsByCrisis[c.id] || [],
+        archivedAt:c.ended_at
+      }))
+    };
+
+    writeCacheNoRefresh(cache);
+    refreshCrisisUI();
+    renderArchives();
+
+    if (flash) {
+      const cockpit = document.getElementById('crisisActiveView');
+      if (cockpit && cache.active) {
+        cockpit.classList.remove('live-flash');
+        void cockpit.offsetWidth;
+        cockpit.classList.add('live-flash');
+      }
+    }
+  } catch(err) {
+    console.error('remoteReloadAll', err);
+    setSyncStatus('error', '● Synchro en erreur');
+  }
+}
+
+function scheduleRemoteReload() {
+  clearTimeout(remoteReloadTimer);
+  remoteReloadTimer = setTimeout(() => remoteReloadAll(true), 160);
+}
+
+function subscribeSharedRealtime() {
+  if (!sharedClient) return;
+  if (sharedChannel) {
+    try { sharedClient.removeChannel(sharedChannel); } catch(e) {}
+  }
+
+  sharedChannel = sharedClient
+    .channel('saint-gilles-crisis-live')
+    .on('postgres_changes', {event:'*', schema:'public', table:'crises'}, scheduleRemoteReload)
+    .on('postgres_changes', {event:'*', schema:'public', table:'crisis_events'}, scheduleRemoteReload)
+    .on('postgres_changes', {event:'*', schema:'public', table:'situation_points'}, scheduleRemoteReload)
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') setSyncStatus('shared', '● Partagé · temps réel');
+    });
+}
+
+async function initSharedMode(force=false) {
+  const cfg = readSyncConfig();
+  updateSharedUserLabel();
+
+  if (!cfg.url || !cfg.key) {
+    sharedConnected = false;
+    setSyncStatus('local', '● Mode local');
+    return false;
+  }
+
+  try {
+    setSyncStatus('connecting', '● Connexion...');
+    if (!window.supabase || !window.supabase.createClient) {
+      throw new Error('Client Supabase indisponible. Vérifiez la connexion Internet.');
+    }
+
+    sharedClient = window.supabase.createClient(cfg.url, cfg.key, {
+      auth: {
+        persistSession:true,
+        autoRefreshToken:true,
+        detectSessionInUrl:false
+      }
+    });
+
+    await ensureAnonymousSession();
+    sharedConnected = true;
+    setSyncStatus('shared', '● Partagé · temps réel');
+
+    await remoteReloadAll(false);
+    subscribeSharedRealtime();
+    return true;
+  } catch(err) {
+    console.error('Supabase init', err);
+    sharedConnected = false;
+    setSyncStatus('error', '● Partage non connecté');
+    if (force) setSyncMessage('Connexion impossible : ' + (err.message || err));
+    return false;
+  }
+}
+
+// ----------------------------------------------------------------
+// Remplacement des actions d'écriture : distant si connecté,
+// sinon comportement local conservé.
+// ----------------------------------------------------------------
+const localStartCrisisV4 = startCrisis;
+startCrisis = async function() {
+  if (!sharedConnected) return localStartCrisisV4();
+  if (!ensureIdentityForWrite()) return;
+
+  const current = loadCrisisData();
+  if (current.active && current.crisis) {
+    alert('Une crise est déjà active.');
+    showPage('p5');
+    return;
+  }
+
+  const identity = readIdentity();
+  const { data: sessionData } = await sharedClient.auth.getSession();
+  const userId = sessionData.session?.user?.id || null;
+  const crisisId = 'CR-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now());
+
+  const row = {
+    id:crisisId,
+    type:val('startType'),
+    level:val('startLevel'),
+    title:val('startTitle') || val('startType') || 'Crise Saint-Gilles',
+    pilot:val('startPilot') || 'À renseigner',
+    status:'active',
+    started_at:new Date().toISOString(),
+    created_by:userId,
+    created_by_name:identity.name || null
+  };
+
+  const { error } = await sharedClient.from('crises').insert(row);
+  if (error) {
+    alert('Impossible de démarrer la crise : ' + error.message);
+    await remoteReloadAll(false);
+    return;
+  }
+  await remoteReloadAll(false);
+  showPage('p5');
+};
+
+const localCloseCrisisV4 = closeCrisis;
+closeCrisis = async function() {
+  if (!sharedConnected) return localCloseCrisisV4();
+  const data = loadCrisisData();
+  if (!data.active || !data.crisis) return;
+  if (!confirm('Clôturer cette crise ? Elle restera disponible dans l’historique partagé.')) return;
+
+  const { error } = await sharedClient
+    .from('crises')
+    .update({status:'closed', ended_at:new Date().toISOString()})
+    .eq('id', data.crisis.id);
+
+  if (error) {
+    alert('Impossible de clôturer la crise : ' + error.message);
+    return;
+  }
+  await remoteReloadAll(false);
+  showPage('p8');
+};
+
+const localAddEventV4 = addEvent;
+addEvent = async function() {
+  if (!sharedConnected) return localAddEventV4();
+  if (!ensureIdentityForWrite()) return;
+
+  const data = loadCrisisData();
+  if (!data.active || !data.crisis) { alert('Aucune crise active.'); return; }
+  const text = val('evText');
+  if (!text) { alert("Renseignez l'événement."); return; }
+
+  const identity = readIdentity();
+  const { data: sessionData } = await sharedClient.auth.getSession();
+  const userId = sessionData.session?.user?.id || null;
+
+  const row = {
+    id:'EV-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now()),
+    crisis_id:data.crisis.id,
+    type:val('evType'),
+    event_text:text,
+    measure:val('evMeasure'),
+    owner:val('evOwner'),
+    impact:val('evImpact'),
+    author_id:userId,
+    author_name:identity.name,
+    author_role:identity.role || null
+  };
+
+  const { error } = await sharedClient.from('crisis_events').insert(row);
+  if (error) {
+    alert("Impossible d'enregistrer l'événement : " + error.message);
+    return;
+  }
+  clearEventForm();
+  await remoteReloadAll(false);
+};
+
+const localSaveSituationPointV4 = saveSituationPoint;
+saveSituationPoint = async function() {
+  if (!sharedConnected) return localSaveSituationPointV4();
+  if (!ensureIdentityForWrite()) return;
+
+  const data = loadCrisisData();
+  if (!data.active || !data.crisis) { alert('Aucune crise active.'); return; }
+
+  const p = {
+    presentTotal:num('ptPresentTotal'),
+    strikers:num('ptStrikers'),
+    absent:num('ptAbsent'),
+    prepCdi:num('ptPrepCdi'),
+    prepTemp:num('ptPrepTemp'),
+    newTemps:num('ptNewTemps'),
+    forkZone:num('ptForkZone'),
+    forkReceiving:num('ptForkReceiving'),
+    forkPacking:num('ptForkPacking'),
+    cleaning:num('ptCleaning'),
+
+    parcelsPlan:num('ptParcelsPlan'),
+    parcelsDone:num('ptParcelsDone'),
+    hyper:num('ptHyper'),
+    market:num('ptMarket'),
+    proxi:num('ptProxi'),
+    cash:num('ptCash'),
+    remaining:num('ptRemaining'),
+    priorityRemaining:num('ptPriorityRemaining'),
+    relief:num('ptRelief'),
+    prod:num('ptProd'),
+
+    receivingStaff:num('ptReceivingStaff'),
+    receivingFork:num('ptReceivingFork'),
+    receivingTrucksPlan:num('ptReceivingTrucksPlan'),
+    receivingTrucksDone:num('ptReceivingTrucksDone'),
+    recPlan:num('ptRecPlan'),
+    recDone:num('ptRecDone'),
+    stored:num('ptStored'),
+    dockPallets:num('ptDockPallets'),
+    receivingObs:val('ptReceivingObs'),
+
+    shippingStaff:num('ptShippingStaff'),
+    shippingZoneFork:num('ptShippingZoneFork'),
+    shippingPackingFork:num('ptShippingPackingFork'),
+    shippingCleaning:num('ptShippingCleaning'),
+    shippingTrucksPlan:num('ptShippingTrucksPlan'),
+    shippingTrucksDone:num('ptShippingTrucksDone'),
+    prevBoxs:num('ptPrevBoxs'),
+    prevPc:num('ptPrevPc'),
+    blockedTrucks:num('ptBlockedTrucks'),
+    departedTrucks:num('ptDepartedTrucks'),
+    shippingObs:val('ptShippingObs'),
+
+    blocked:val('ptBlocked'),
+    mood:val('ptMood'),
+    entryStatus:val('ptEntryStatus'),
+    exitStatus:val('ptExitStatus'),
+    comment:val('ptComment')
+  };
+
+  p.prep = (p.prepCdi || 0) + (p.prepTemp || 0);
+  p.fork = (p.forkZone || 0) + (p.forkReceiving || 0) + (p.forkPacking || 0);
+
+  const identity = readIdentity();
+  const { data: sessionData } = await sharedClient.auth.getSession();
+  const userId = sessionData.session?.user?.id || null;
+  const pointId = 'PT-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now());
+
+  const pointRow = {
+    id:pointId,
+    crisis_id:data.crisis.id,
+    data:p,
+    author_id:userId,
+    author_name:identity.name,
+    author_role:identity.role || null
+  };
+
+  const { error:pointError } = await sharedClient.from('situation_points').insert(pointRow);
+  if (pointError) {
+    alert('Impossible d’enregistrer le point de situation : ' + pointError.message);
+    return;
+  }
+
+  // Trace automatique dans la main courante
+  await sharedClient.from('crisis_events').insert({
+    id:'EV-' + (crypto.randomUUID ? crypto.randomUUID() : (Date.now()+'-pt')),
+    crisis_id:data.crisis.id,
+    type:'Point situation',
+    event_text:'Point de situation enregistré',
+    measure:p.comment || '',
+    owner:data.crisis.pilot || '',
+    impact:'',
+    author_id:userId,
+    author_name:identity.name,
+    author_role:identity.role || null
+  });
+
+  clearPointForm();
+  await remoteReloadAll(false);
+  showPage('p5');
+};
+
+// Démarrage automatique du partage si des paramètres ont déjà été enregistrés.
+document.addEventListener('DOMContentLoaded', async () => {
+  updateSharedUserLabel();
+  await initSharedMode(false);
+});
+
 </script>
+
+<dialog id="syncDialog">
+  <div class="modal-head">Mode partagé</div>
+  <div class="modal-body">
+    <div class="sync-help">
+      En mode partagé, la crise, la main courante, les points de situation et l'historique sont stockés
+      dans une base centrale Supabase. Toute nouvelle saisie apparaît automatiquement sur les autres postes connectés.
+      Sans configuration Supabase, l'application reste utilisable en mode local.
+    </div>
+
+    <div class="sync-config-grid">
+      <div class="field">
+        <label>Votre nom</label>
+        <input id="syncName" placeholder="Ex. Ludovic">
+      </div>
+      <div class="field">
+        <label>Votre fonction</label>
+        <input id="syncRole" placeholder="Ex. Directeur entrepôt">
+      </div>
+      <div class="field full">
+        <label>Supabase Project URL</label>
+        <input id="syncUrl" placeholder="https://xxxxxxxx.supabase.co">
+      </div>
+      <div class="field full">
+        <label>Supabase Publishable Key</label>
+        <input id="syncKey" type="password" placeholder="sb_publishable_...">
+      </div>
+    </div>
+
+    <div class="sync-msg" id="syncMessage"></div>
+
+    <div class="sync-config-actions">
+      <button class="v2-secondary" onclick="closeSyncDialog()">Annuler</button>
+      <button class="v2-secondary" onclick="saveIdentityOnly()">Enregistrer identité</button>
+      <button class="v2-primary green" onclick="saveAndConnectShared()">Activer le partage</button>
+    </div>
+  </div>
+</dialog>
+
 </body>
 </html>
