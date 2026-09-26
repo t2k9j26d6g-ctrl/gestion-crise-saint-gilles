@@ -806,6 +806,38 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
   .sync-config-grid .full { grid-column:1; }
 }
 
+
+/* ================================================================
+   V5.5 — RETEX DE FIN DE CRISE
+   ================================================================ */
+.retex-actions { display:flex; gap:10px; flex-wrap:wrap; }
+.retex-sheet {
+  background:#fff; border:1px solid #dbe5ec; border-radius:16px;
+  padding:24px; box-shadow:0 8px 24px rgba(13,55,81,.08);
+}
+.retex-title { font-size:26px; font-weight:950; color:#083e66; letter-spacing:.02em; }
+.retex-subtitle { margin-top:4px; color:#667783; font-size:12px; }
+.retex-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:18px 0; }
+.retex-kpi { background:#f6f9fb; border:1px solid #dfe8ee; border-radius:12px; padding:12px; }
+.retex-kpi .lab { font-size:9px; text-transform:uppercase; color:#72808a; font-weight:900; }
+.retex-kpi .val { font-size:20px; margin-top:4px; color:#0b4f79; font-weight:950; }
+.retex-section { margin-top:20px; }
+.retex-section h3 {
+  color:#0b4f79; font-size:15px; margin:0 0 9px;
+  padding-bottom:6px; border-bottom:2px solid #e5edf2;
+}
+.retex-summary { line-height:1.65; color:#263744; }
+.retex-table { width:100%; border-collapse:collapse; font-size:11px; }
+.retex-table th { background:#0b4f79; color:#fff; text-align:left; padding:8px; }
+.retex-table td { padding:8px; border-bottom:1px solid #e3eaef; vertical-align:top; }
+.retex-callout { padding:12px 14px; background:#fff8e8; border-left:4px solid #e48a00; border-radius:8px; margin:7px 0; }
+.retex-good { padding:12px 14px; background:#eef8ec; border-left:4px solid #5fa84f; border-radius:8px; margin:7px 0; }
+.retex-edit {
+  width:100%; min-height:90px; box-sizing:border-box; border:1px solid #cfdbe3;
+  border-radius:10px; padding:10px; font:inherit; resize:vertical; background:#fbfdfe;
+}
+@media(max-width:900px){ .retex-grid{grid-template-columns:repeat(2,1fr);} }
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
@@ -1778,7 +1810,10 @@ onclick="openModal(
                 <div class="v2-title" id="archiveTitle">Crise archivée</div>
                 <div class="v2-subtitle" id="archiveMeta"></div>
               </div>
-              <button class="v2-secondary" onclick="backToArchiveList()">← Retour à l'historique</button>
+              <div class="retex-actions">
+                <button class="v2-primary green" onclick="openRetexFromArchive()">🧭 Générer le RETEX</button>
+                <button class="v2-secondary" onclick="backToArchiveList()">← Retour à l'historique</button>
+              </div>
             </div>
 
             <div class="archive-kpis">
@@ -1805,6 +1840,30 @@ onclick="openModal(
           </div>
         </div>
       </div><!-- /p8 -->
+
+      <!-- ==========================================================
+           PAGE 9 — RETEX DE FIN DE CRISE
+           ========================================================== -->
+      <div class="page" id="p9">
+        <div class="back-bar">
+          <button class="back-btn" onclick="showPage('p8')">← Retour Historique</button>
+          <span class="back-bar-title">🧭 RETEX de fin de crise</span>
+        </div>
+        <div class="v2-page-body">
+          <div class="archive-detail-head">
+            <div>
+              <div class="v2-title">Retour d'expérience</div>
+              <div class="v2-subtitle">Synthèse automatique issue de la main courante et des points de situation. Les axes d'amélioration restent à valider par le pilote.</div>
+            </div>
+            <div class="retex-actions">
+              <button class="v2-secondary" onclick="copyRetexText()">📋 Copier le RETEX</button>
+              <button class="v2-primary green" onclick="printRetex()">🖨️ Imprimer / PDF</button>
+            </div>
+          </div>
+          <div id="retexContent" class="retex-sheet"></div>
+        </div>
+      </div><!-- /p9 -->
+
 
     </div><!-- /content-area -->
   </div><!-- /layout -->
@@ -2368,6 +2427,7 @@ function renderArchives() {
 }
 
 function openArchive(archiveId) {
+  window.__currentArchiveId = archiveId;
   const data = loadCrisisData();
   const a = (data.archives || []).find(x => x.archiveId === archiveId);
   if (!a) return;
@@ -3111,8 +3171,240 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 
+
 // ================================================================
-// V5.4 — EXPORT EXCEL UNIQUE (.XLSX)
+// V5.5 — RETEX AUTOMATIQUE
+// ================================================================
+function numVal(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const n = Number(String(v).replace(/\s/g,'').replace(',','.'));
+  return Number.isFinite(n) ? n : null;
+}
+function maxPoint(pts, key) {
+  const vals = (pts || []).map(p => numVal(p[key])).filter(v => v !== null);
+  return vals.length ? Math.max(...vals) : null;
+}
+function minPoint(pts, key) {
+  const vals = (pts || []).map(p => numVal(p[key])).filter(v => v !== null);
+  return vals.length ? Math.min(...vals) : null;
+}
+function lastNonEmpty(pts, key) {
+  for (let i=(pts||[]).length-1;i>=0;i--) {
+    const v = pts[i][key];
+    if (v !== null && v !== undefined && v !== '') return v;
+  }
+  return '';
+}
+function retexFmt(v) {
+  const n = numVal(v);
+  return n === null ? '—' : new Intl.NumberFormat('fr-FR').format(n);
+}
+function htmlList(items, cls='retex-callout') {
+  if (!items.length) return '<div class="'+cls+'">Aucun élément automatiquement détecté sur ce thème.</div>';
+  return items.map(x => '<div class="'+cls+'">'+escapeHtml(x)+'</div>').join('');
+}
+function buildRetex(archive) {
+  const c = archive.crisis || {};
+  const pts = (archive.points || []).slice().sort((a,b)=>new Date(a.at||0)-new Date(b.at||0));
+  const evs = (archive.events || []).slice().sort((a,b)=>new Date(a.at||0)-new Date(b.at||0));
+  const last = pts.length ? pts[pts.length-1] : {};
+
+  const maxStrikers = maxPoint(pts,'strikers');
+  const minPresent = minPoint(pts,'presentTotal');
+  const maxBlocked = maxPoint(pts,'blockedTrucks');
+  const maxDock = maxPoint(pts,'dockPallets');
+  const maxRemaining = maxPoint(pts,'parcelsRemaining');
+  const finalDone = lastNonEmpty(pts,'parcelsDone');
+  const finalPlan = lastNonEmpty(pts,'parcelsPlan');
+
+  const difficulties = [];
+  const positives = [];
+  const actions = [];
+
+  if (maxStrikers !== null && maxStrikers > 0) {
+    difficulties.push(`Pic de ${retexFmt(maxStrikers)} gréviste(s) constaté pendant la crise.`);
+    actions.push("Conserver un suivi horodaté distinct des grévistes, absences hors grève et ressources réellement disponibles.");
+  }
+  if (maxBlocked !== null && maxBlocked > 0) {
+    difficulties.push(`Jusqu'à ${retexFmt(maxBlocked)} camion(s) bloqué(s) au même point de situation.`);
+    actions.push("Formaliser un seuil d'alerte transport et les solutions de délestage / priorisation associées.");
+  } else if (pts.length) {
+    positives.push("Aucun camion bloqué n'a été relevé dans les points de situation enregistrés.");
+  }
+  if (maxDock !== null && maxDock > 0) {
+    difficulties.push(`Pic de ${retexFmt(maxDock)} palette(s) restant à quai.`);
+    actions.push("Définir un seuil de saturation réception et les décisions associées avant dépassement.");
+  }
+  if (maxRemaining !== null && maxRemaining > 0) {
+    difficulties.push(`Reste à préparer maximal observé : ${retexFmt(maxRemaining)} colis.`);
+    actions.push("Tracer systématiquement les volumes prioritaires et l'heure cible de résorption du retard.");
+  }
+  if (evs.length >= 3) positives.push(`Main courante alimentée avec ${evs.length} événements horodatés.`);
+  if (pts.length >= 2) positives.push(`${pts.length} points de situation ont permis de suivre l'évolution de la crise.`);
+  if (c.pilot && c.pilot !== 'À renseigner') positives.push(`Pilotage identifié : ${c.pilot}.`);
+  else actions.push("Désigner le pilote de crise dès l'ouverture et le renseigner dans l'outil.");
+
+  const keyEvents = evs.filter(e => (e.type||'').toLowerCase() !== 'point situation').slice(0,20);
+  const chronology = keyEvents.length ? keyEvents : evs.slice(0,20);
+
+  const summaryParts = [];
+  summaryParts.push(`La crise « ${c.title || c.type || 'Crise'} » a débuté le ${fmtDateTime(c.startedAt)} et s'est terminée le ${fmtDateTime(c.endedAt)}.`);
+  summaryParts.push(`Elle a généré ${evs.length} événement(s) de main courante et ${pts.length} point(s) de situation.`);
+  if (maxStrikers !== null) summaryParts.push(`Le pic de grévistes observé est de ${retexFmt(maxStrikers)}.`);
+  if (minPresent !== null) summaryParts.push(`Le niveau minimal de présence enregistré est de ${retexFmt(minPresent)} personne(s).`);
+  if (finalDone !== '') {
+    summaryParts.push(`Au dernier point, ${retexFmt(finalDone)} colis étaient réalisés${finalPlan !== '' ? ` pour ${retexFmt(finalPlan)} prévus` : ''}.`);
+  }
+
+  const rows = chronology.map(e => `
+    <tr>
+      <td>${escapeHtml(fmtDateTime(e.at))}</td>
+      <td>${escapeHtml(e.type || 'Événement')}</td>
+      <td><strong>${escapeHtml(e.text || '')}</strong>${e.measure ? '<br>Mesure : '+escapeHtml(e.measure) : ''}${e.impact ? '<br>Impact : '+escapeHtml(e.impact) : ''}</td>
+      <td>${escapeHtml(e.authorName || e.owner || '—')}</td>
+    </tr>`).join('');
+
+  const pointRows = pts.slice(-10).map(p => `
+    <tr>
+      <td>${escapeHtml(fmtDateTime(p.at))}</td>
+      <td>${escapeHtml(retexFmt(p.presentTotal))}</td>
+      <td>${escapeHtml(retexFmt(p.strikers))}</td>
+      <td>${escapeHtml(retexFmt(p.parcelsDone))}</td>
+      <td>${escapeHtml(retexFmt(p.blockedTrucks))}</td>
+      <td>${escapeHtml(retexFmt(p.dockPallets))}</td>
+    </tr>`).join('');
+
+  return `
+    <div class="retex-title">RETEX — ${escapeHtml(c.title || 'Crise')}</div>
+    <div class="retex-subtitle">${escapeHtml(c.type || 'Crise')} · Niveau ${escapeHtml(c.level || '—')} · Pilote : ${escapeHtml(c.pilot || '—')}</div>
+
+    <div class="retex-grid">
+      <div class="retex-kpi"><div class="lab">Durée</div><div class="val">${escapeHtml(durationText(c.startedAt,c.endedAt))}</div></div>
+      <div class="retex-kpi"><div class="lab">Événements</div><div class="val">${evs.length}</div></div>
+      <div class="retex-kpi"><div class="lab">Points situation</div><div class="val">${pts.length}</div></div>
+      <div class="retex-kpi"><div class="lab">Pic grévistes</div><div class="val">${escapeHtml(retexFmt(maxStrikers))}</div></div>
+      <div class="retex-kpi"><div class="lab">Présence mini</div><div class="val">${escapeHtml(retexFmt(minPresent))}</div></div>
+      <div class="retex-kpi"><div class="lab">Camions bloqués max</div><div class="val">${escapeHtml(retexFmt(maxBlocked))}</div></div>
+      <div class="retex-kpi"><div class="lab">Palettes à quai max</div><div class="val">${escapeHtml(retexFmt(maxDock))}</div></div>
+      <div class="retex-kpi"><div class="lab">Dernière prod.</div><div class="val">${escapeHtml(retexFmt(finalDone))}</div></div>
+    </div>
+
+    <div class="retex-section">
+      <h3>1. Synthèse exécutive</h3>
+      <div class="retex-summary">${escapeHtml(summaryParts.join(' '))}</div>
+    </div>
+
+    <div class="retex-section">
+      <h3>2. Chronologie des faits marquants</h3>
+      ${rows ? `<table class="retex-table"><thead><tr><th>Heure</th><th>Type</th><th>Fait / décision</th><th>Auteur / pilote</th></tr></thead><tbody>${rows}</tbody></table>` :
+      '<div class="empty-state">Aucun événement enregistré.</div>'}
+    </div>
+
+    <div class="retex-section">
+      <h3>3. Évolution des principaux indicateurs — 10 derniers points</h3>
+      ${pointRows ? `<table class="retex-table"><thead><tr><th>Point</th><th>Présents</th><th>Grévistes</th><th>Colis réalisés</th><th>Camions bloqués</th><th>Palettes à quai</th></tr></thead><tbody>${pointRows}</tbody></table>` :
+      '<div class="empty-state">Aucun point de situation enregistré.</div>'}
+    </div>
+
+    <div class="retex-section">
+      <h3>4. Éléments ayant bien fonctionné</h3>
+      ${htmlList(positives,'retex-good')}
+    </div>
+
+    <div class="retex-section">
+      <h3>5. Difficultés / points de vigilance détectés</h3>
+      ${htmlList(difficulties,'retex-callout')}
+    </div>
+
+    <div class="retex-section">
+      <h3>6. Axes d'amélioration proposés — à valider</h3>
+      ${htmlList([...new Set(actions)],'retex-callout')}
+    </div>
+
+    <div class="retex-section">
+      <h3>7. Complément du pilote</h3>
+      <label><strong>Enseignements complémentaires / décisions :</strong></label>
+      <textarea id="retexManagerNotes" class="retex-edit" placeholder="Compléter ici le RETEX managérial avant impression ou copie..."></textarea>
+    </div>
+  `;
+}
+
+function openRetexFromArchive() {
+  const data = loadCrisisData();
+  const archiveId = window.__currentArchiveId;
+  const a = (data.archives || []).find(x => x.archiveId === archiveId);
+  if (!a) {
+    alert("Sélectionnez d'abord une crise clôturée dans l'historique.");
+    return;
+  }
+  const box = document.getElementById('retexContent');
+  if (box) box.innerHTML = buildRetex(a);
+  showPage('p9');
+}
+
+function retexPlainText() {
+  const box = document.getElementById('retexContent');
+  if (!box) return '';
+  const clone = box.cloneNode(true);
+  const ta = clone.querySelector('#retexManagerNotes');
+  if (ta) ta.replaceWith(document.createTextNode(
+    '\nComplément du pilote : ' + (document.getElementById('retexManagerNotes')?.value || '')
+  ));
+  return clone.innerText.replace(/\n{3,}/g,'\n\n').trim();
+}
+
+async function copyRetexText() {
+  const txt = retexPlainText();
+  try {
+    await navigator.clipboard.writeText(txt);
+    alert('RETEX copié dans le presse-papiers.');
+  } catch(e) {
+    alert("Copie automatique impossible sur ce navigateur.");
+  }
+}
+
+function printRetex() {
+  const box = document.getElementById('retexContent');
+  if (!box) return;
+  const notes = document.getElementById('retexManagerNotes')?.value || '';
+  const clone = box.cloneNode(true);
+  const ta = clone.querySelector('#retexManagerNotes');
+  if (ta) {
+    const div = document.createElement('div');
+    div.style.whiteSpace='pre-wrap';
+    div.style.padding='10px';
+    div.style.border='1px solid #d8e1e7';
+    div.textContent = notes || '—';
+    ta.replaceWith(div);
+  }
+
+  const w = window.open('', '_blank');
+  if (!w) { alert("Autorisez les fenêtres pop-up pour imprimer le RETEX."); return; }
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>RETEX</title>
+    <style>
+      body{font-family:Arial,sans-serif;color:#24343f;margin:26px;font-size:12px}
+      .retex-title{font-size:25px;font-weight:900;color:#0b4f79}
+      .retex-subtitle{color:#60717d;margin:5px 0 18px}
+      .retex-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
+      .retex-kpi{border:1px solid #dbe4ea;border-radius:8px;padding:9px}
+      .retex-kpi .lab{font-size:8px;text-transform:uppercase;font-weight:bold;color:#687984}
+      .retex-kpi .val{font-size:16px;font-weight:bold;color:#0b4f79;margin-top:3px}
+      .retex-section{margin-top:18px;break-inside:avoid}
+      .retex-section h3{color:#0b4f79;border-bottom:2px solid #dfe7ec;padding-bottom:5px}
+      .retex-table{width:100%;border-collapse:collapse;font-size:10px}
+      .retex-table th{background:#0b4f79;color:#fff;text-align:left;padding:6px}
+      .retex-table td{border-bottom:1px solid #dfe7ec;padding:6px;vertical-align:top}
+      .retex-callout{border-left:4px solid #e48a00;background:#fff8e8;padding:8px;margin:5px 0}
+      .retex-good{border-left:4px solid #5fa84f;background:#eef8ec;padding:8px;margin:5px 0}
+      @page{size:A4;margin:14mm}
+    </style></head><body>${clone.innerHTML}</body></html>`);
+  w.document.close();
+  w.focus();
+  setTimeout(()=>w.print(),300);
+}
+
+// ================================================================
+// V5.5 — EXPORT EXCEL UNIQUE (.XLSX)
 // ================================================================
 function flattenSituationData(d={}) {
   const flat = {};
