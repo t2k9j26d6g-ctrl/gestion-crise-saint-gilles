@@ -806,535 +806,7 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
 }
 
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-// ================================================================
-// V5 — MODE PARTAGÉ SUPABASE / TEMPS RÉEL
-// ================================================================
-const SYNC_CONFIG_KEY = 'sg_supabase_config_v1';
-const IDENTITY_KEY = 'sg_crisis_identity_v1';
-
-let sharedClient = null;
-let sharedConnected = false;
-let sharedChannel = null;
-let remoteReloadTimer = null;
-
-// Valeurs laissées vides dans la version TEST.
-// Elles pourront être intégrées directement dans la version PROD.
-const DEFAULT_SUPABASE_URL = '';
-const DEFAULT_SUPABASE_KEY = '';
-
-function readSyncConfig() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(SYNC_CONFIG_KEY) || '{}');
-    return {
-      url: saved.url || DEFAULT_SUPABASE_URL || '',
-      key: saved.key || DEFAULT_SUPABASE_KEY || ''
-    };
-  } catch(e) {
-    return {url:DEFAULT_SUPABASE_URL || '', key:DEFAULT_SUPABASE_KEY || ''};
-  }
-}
-
-function readIdentity() {
-  try { return JSON.parse(localStorage.getItem(IDENTITY_KEY) || '{}'); }
-  catch(e) { return {}; }
-}
-
-function saveIdentity(name, role) {
-  localStorage.setItem(IDENTITY_KEY, JSON.stringify({name:name || '', role:role || ''}));
-  updateSharedUserLabel();
-}
-
-function updateSharedUserLabel() {
-  const i = readIdentity();
-  const el = document.getElementById('sharedUserLabel');
-  if (el) el.textContent = i.name ? ('👤 ' + i.name + (i.role ? ' · ' + i.role : '')) : '';
-}
-
-function setSyncStatus(mode, text) {
-  const el = document.getElementById('syncStatus');
-  if (!el) return;
-  el.className = 'sync-pill ' + mode;
-  el.textContent = text;
-}
-
-function setSyncMessage(text, ok=false) {
-  const el = document.getElementById('syncMessage');
-  if (!el) return;
-  el.className = 'sync-msg ' + (ok ? 'ok' : (text ? 'err' : ''));
-  el.textContent = text || '';
-}
-
-function openSyncDialog() {
-  const cfg = readSyncConfig();
-  const id = readIdentity();
-  const d = document.getElementById('syncDialog');
-  if (!d) return;
-  document.getElementById('syncName').value = id.name || '';
-  document.getElementById('syncRole').value = id.role || '';
-  document.getElementById('syncUrl').value = cfg.url || '';
-  document.getElementById('syncKey').value = cfg.key || '';
-  setSyncMessage(sharedConnected ? 'Connexion partagée active.' : '');
-  d.showModal();
-}
-
-function closeSyncDialog() {
-  const d = document.getElementById('syncDialog');
-  if (d) d.close();
-}
-
-function saveIdentityOnly() {
-  const name = val('syncName');
-  const role = val('syncRole');
-  if (!name) { setSyncMessage('Renseignez votre nom.'); return; }
-  saveIdentity(name, role);
-  setSyncMessage('Identité enregistrée sur ce poste.', true);
-}
-
-async function saveAndConnectShared() {
-  const name = val('syncName');
-  const role = val('syncRole');
-  const url = val('syncUrl');
-  const key = val('syncKey');
-
-  if (!name) { setSyncMessage('Renseignez votre nom.'); return; }
-  if (!url || !key) { setSyncMessage('Renseignez l’URL du projet Supabase et la Publishable Key.'); return; }
-
-  saveIdentity(name, role);
-  localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify({url, key}));
-  setSyncMessage('Connexion en cours...');
-  const ok = await initSharedMode(true);
-  if (ok) {
-    setSyncMessage('Mode partagé activé. Les mises à jour sont maintenant synchronisées.', true);
-    setTimeout(closeSyncDialog, 700);
-  }
-}
-
-function ensureIdentityForWrite() {
-  const i = readIdentity();
-  if (!i.name) {
-    openSyncDialog();
-    setSyncMessage('Renseignez votre nom avant d’enregistrer une information.');
-    return false;
-  }
-  return true;
-}
-
-async function ensureAnonymousSession() {
-  const { data: sessionData, error: sessionError } = await sharedClient.auth.getSession();
-  if (sessionError) throw sessionError;
-  if (sessionData && sessionData.session) return sessionData.session;
-
-  const { data, error } = await sharedClient.auth.signInAnonymously();
-  if (error) throw error;
-  return data.session;
-}
-
-function mapCrisisRow(c) {
-  if (!c) return null;
-  return {
-    id:c.id,
-    type:c.type,
-    level:c.level,
-    title:c.title,
-    pilot:c.pilot,
-    startedAt:c.started_at,
-    endedAt:c.ended_at
-  };
-}
-
-function mapEventRow(e) {
-  return {
-    id:e.id,
-    at:e.event_at,
-    type:e.type,
-    text:e.event_text,
-    measure:e.measure,
-    owner:e.owner,
-    impact:e.impact,
-    authorName:e.author_name,
-    authorRole:e.author_role
-  };
-}
-
-function mapPointRow(p) {
-  const obj = Object.assign({}, p.data || {});
-  obj.id = p.id;
-  obj.at = p.point_at;
-  obj.authorName = p.author_name;
-  obj.authorRole = p.author_role;
-  return obj;
-}
-
-function writeCacheNoRefresh(data) {
-  localStorage.setItem(CRISIS_KEY, JSON.stringify(data));
-}
-
-// V5 : lecture du cache sans déclencher la migration V3/V4
-loadCrisisData = function() {
-  try {
-    const d = JSON.parse(localStorage.getItem(CRISIS_KEY) || 'null');
-    if (d) {
-      if (!Array.isArray(d.events)) d.events=[];
-      if (!Array.isArray(d.points)) d.points=[];
-      if (!Array.isArray(d.archives)) d.archives=[];
-      return d;
-    }
-  } catch(e) {}
-  return {active:false, crisis:null, events:[], points:[], archives:[]};
-};
-
-saveCrisisData = function(data) {
-  writeCacheNoRefresh(data);
-  refreshCrisisUI();
-  renderArchives();
-};
-
-async function remoteReloadAll(flash=true) {
-  if (!sharedConnected || !sharedClient) return;
-
-  try {
-    const { data: crises, error: ce } = await sharedClient
-      .from('crises')
-      .select('*')
-      .order('started_at', {ascending:false})
-      .limit(50);
-    if (ce) throw ce;
-
-    const activeRow = (crises || []).find(c => c.status === 'active') || null;
-    const closedRows = (crises || []).filter(c => c.status === 'closed');
-
-    const crisisIds = (crises || []).map(c => c.id);
-    let eventRows = [], pointRows = [];
-
-    if (crisisIds.length) {
-      const er = await sharedClient
-        .from('crisis_events')
-        .select('*')
-        .in('crisis_id', crisisIds)
-        .order('event_at', {ascending:true});
-      if (er.error) throw er.error;
-      eventRows = er.data || [];
-
-      const pr = await sharedClient
-        .from('situation_points')
-        .select('*')
-        .in('crisis_id', crisisIds)
-        .order('point_at', {ascending:true});
-      if (pr.error) throw pr.error;
-      pointRows = pr.data || [];
-    }
-
-    const eventsByCrisis = {};
-    eventRows.forEach(e => {
-      (eventsByCrisis[e.crisis_id] ||= []).push(mapEventRow(e));
-    });
-    const pointsByCrisis = {};
-    pointRows.forEach(p => {
-      (pointsByCrisis[p.crisis_id] ||= []).push(mapPointRow(p));
-    });
-
-    const cache = {
-      active: !!activeRow,
-      crisis: activeRow ? mapCrisisRow(activeRow) : null,
-      events: activeRow ? (eventsByCrisis[activeRow.id] || []) : [],
-      points: activeRow ? (pointsByCrisis[activeRow.id] || []) : [],
-      archives: closedRows.map(c => ({
-        archiveId:'AR-' + c.id,
-        crisis:mapCrisisRow(c),
-        events:eventsByCrisis[c.id] || [],
-        points:pointsByCrisis[c.id] || [],
-        archivedAt:c.ended_at
-      }))
-    };
-
-    writeCacheNoRefresh(cache);
-    refreshCrisisUI();
-    renderArchives();
-
-    if (flash) {
-      const cockpit = document.getElementById('crisisActiveView');
-      if (cockpit && cache.active) {
-        cockpit.classList.remove('live-flash');
-        void cockpit.offsetWidth;
-        cockpit.classList.add('live-flash');
-      }
-    }
-  } catch(err) {
-    console.error('remoteReloadAll', err);
-    setSyncStatus('error', '● Synchro en erreur');
-  }
-}
-
-function scheduleRemoteReload() {
-  clearTimeout(remoteReloadTimer);
-  remoteReloadTimer = setTimeout(() => remoteReloadAll(true), 160);
-}
-
-function subscribeSharedRealtime() {
-  if (!sharedClient) return;
-  if (sharedChannel) {
-    try { sharedClient.removeChannel(sharedChannel); } catch(e) {}
-  }
-
-  sharedChannel = sharedClient
-    .channel('saint-gilles-crisis-live')
-    .on('postgres_changes', {event:'*', schema:'public', table:'crises'}, scheduleRemoteReload)
-    .on('postgres_changes', {event:'*', schema:'public', table:'crisis_events'}, scheduleRemoteReload)
-    .on('postgres_changes', {event:'*', schema:'public', table:'situation_points'}, scheduleRemoteReload)
-    .subscribe((status) => {
-      if (status === 'SUBSCRIBED') setSyncStatus('shared', '● Partagé · temps réel');
-    });
-}
-
-async function initSharedMode(force=false) {
-  const cfg = readSyncConfig();
-  updateSharedUserLabel();
-
-  if (!cfg.url || !cfg.key) {
-    sharedConnected = false;
-    setSyncStatus('local', '● Mode local');
-    return false;
-  }
-
-  try {
-    setSyncStatus('connecting', '● Connexion...');
-    if (!window.supabase || !window.supabase.createClient) {
-      throw new Error('Client Supabase indisponible. Vérifiez la connexion Internet.');
-    }
-
-    sharedClient = window.supabase.createClient(cfg.url, cfg.key, {
-      auth: {
-        persistSession:true,
-        autoRefreshToken:true,
-        detectSessionInUrl:false
-      }
-    });
-
-    await ensureAnonymousSession();
-    sharedConnected = true;
-    setSyncStatus('shared', '● Partagé · temps réel');
-
-    await remoteReloadAll(false);
-    subscribeSharedRealtime();
-    return true;
-  } catch(err) {
-    console.error('Supabase init', err);
-    sharedConnected = false;
-    setSyncStatus('error', '● Partage non connecté');
-    if (force) setSyncMessage('Connexion impossible : ' + (err.message || err));
-    return false;
-  }
-}
-
-// ----------------------------------------------------------------
-// Remplacement des actions d'écriture : distant si connecté,
-// sinon comportement local conservé.
-// ----------------------------------------------------------------
-const localStartCrisisV4 = startCrisis;
-startCrisis = async function() {
-  if (!sharedConnected) return localStartCrisisV4();
-  if (!ensureIdentityForWrite()) return;
-
-  const current = loadCrisisData();
-  if (current.active && current.crisis) {
-    alert('Une crise est déjà active.');
-    showPage('p5');
-    return;
-  }
-
-  const identity = readIdentity();
-  const { data: sessionData } = await sharedClient.auth.getSession();
-  const userId = sessionData.session?.user?.id || null;
-  const crisisId = 'CR-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now());
-
-  const row = {
-    id:crisisId,
-    type:val('startType'),
-    level:val('startLevel'),
-    title:val('startTitle') || val('startType') || 'Crise Saint-Gilles',
-    pilot:val('startPilot') || 'À renseigner',
-    status:'active',
-    started_at:new Date().toISOString(),
-    created_by:userId,
-    created_by_name:identity.name || null
-  };
-
-  const { error } = await sharedClient.from('crises').insert(row);
-  if (error) {
-    alert('Impossible de démarrer la crise : ' + error.message);
-    await remoteReloadAll(false);
-    return;
-  }
-  await remoteReloadAll(false);
-  showPage('p5');
-};
-
-const localCloseCrisisV4 = closeCrisis;
-closeCrisis = async function() {
-  if (!sharedConnected) return localCloseCrisisV4();
-  const data = loadCrisisData();
-  if (!data.active || !data.crisis) return;
-  if (!confirm('Clôturer cette crise ? Elle restera disponible dans l’historique partagé.')) return;
-
-  const { error } = await sharedClient
-    .from('crises')
-    .update({status:'closed', ended_at:new Date().toISOString()})
-    .eq('id', data.crisis.id);
-
-  if (error) {
-    alert('Impossible de clôturer la crise : ' + error.message);
-    return;
-  }
-  await remoteReloadAll(false);
-  showPage('p8');
-};
-
-const localAddEventV4 = addEvent;
-addEvent = async function() {
-  if (!sharedConnected) return localAddEventV4();
-  if (!ensureIdentityForWrite()) return;
-
-  const data = loadCrisisData();
-  if (!data.active || !data.crisis) { alert('Aucune crise active.'); return; }
-  const text = val('evText');
-  if (!text) { alert("Renseignez l'événement."); return; }
-
-  const identity = readIdentity();
-  const { data: sessionData } = await sharedClient.auth.getSession();
-  const userId = sessionData.session?.user?.id || null;
-
-  const row = {
-    id:'EV-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now()),
-    crisis_id:data.crisis.id,
-    type:val('evType'),
-    event_text:text,
-    measure:val('evMeasure'),
-    owner:val('evOwner'),
-    impact:val('evImpact'),
-    author_id:userId,
-    author_name:identity.name,
-    author_role:identity.role || null
-  };
-
-  const { error } = await sharedClient.from('crisis_events').insert(row);
-  if (error) {
-    alert("Impossible d'enregistrer l'événement : " + error.message);
-    return;
-  }
-  clearEventForm();
-  await remoteReloadAll(false);
-};
-
-const localSaveSituationPointV4 = saveSituationPoint;
-saveSituationPoint = async function() {
-  if (!sharedConnected) return localSaveSituationPointV4();
-  if (!ensureIdentityForWrite()) return;
-
-  const data = loadCrisisData();
-  if (!data.active || !data.crisis) { alert('Aucune crise active.'); return; }
-
-  const p = {
-    presentTotal:num('ptPresentTotal'),
-    strikers:num('ptStrikers'),
-    absent:num('ptAbsent'),
-    prepCdi:num('ptPrepCdi'),
-    prepTemp:num('ptPrepTemp'),
-    newTemps:num('ptNewTemps'),
-    forkZone:num('ptForkZone'),
-    forkReceiving:num('ptForkReceiving'),
-    forkPacking:num('ptForkPacking'),
-    cleaning:num('ptCleaning'),
-
-    parcelsPlan:num('ptParcelsPlan'),
-    parcelsDone:num('ptParcelsDone'),
-    hyper:num('ptHyper'),
-    market:num('ptMarket'),
-    proxi:num('ptProxi'),
-    cash:num('ptCash'),
-    remaining:num('ptRemaining'),
-    priorityRemaining:num('ptPriorityRemaining'),
-    relief:num('ptRelief'),
-    prod:num('ptProd'),
-
-    receivingStaff:num('ptReceivingStaff'),
-    receivingFork:num('ptReceivingFork'),
-    receivingTrucksPlan:num('ptReceivingTrucksPlan'),
-    receivingTrucksDone:num('ptReceivingTrucksDone'),
-    recPlan:num('ptRecPlan'),
-    recDone:num('ptRecDone'),
-    stored:num('ptStored'),
-    dockPallets:num('ptDockPallets'),
-    receivingObs:val('ptReceivingObs'),
-
-    shippingStaff:num('ptShippingStaff'),
-    shippingZoneFork:num('ptShippingZoneFork'),
-    shippingPackingFork:num('ptShippingPackingFork'),
-    shippingCleaning:num('ptShippingCleaning'),
-    shippingTrucksPlan:num('ptShippingTrucksPlan'),
-    shippingTrucksDone:num('ptShippingTrucksDone'),
-    prevBoxs:num('ptPrevBoxs'),
-    prevPc:num('ptPrevPc'),
-    blockedTrucks:num('ptBlockedTrucks'),
-    departedTrucks:num('ptDepartedTrucks'),
-    shippingObs:val('ptShippingObs'),
-
-    blocked:val('ptBlocked'),
-    mood:val('ptMood'),
-    entryStatus:val('ptEntryStatus'),
-    exitStatus:val('ptExitStatus'),
-    comment:val('ptComment')
-  };
-
-  p.prep = (p.prepCdi || 0) + (p.prepTemp || 0);
-  p.fork = (p.forkZone || 0) + (p.forkReceiving || 0) + (p.forkPacking || 0);
-
-  const identity = readIdentity();
-  const { data: sessionData } = await sharedClient.auth.getSession();
-  const userId = sessionData.session?.user?.id || null;
-  const pointId = 'PT-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now());
-
-  const pointRow = {
-    id:pointId,
-    crisis_id:data.crisis.id,
-    data:p,
-    author_id:userId,
-    author_name:identity.name,
-    author_role:identity.role || null
-  };
-
-  const { error:pointError } = await sharedClient.from('situation_points').insert(pointRow);
-  if (pointError) {
-    alert('Impossible d’enregistrer le point de situation : ' + pointError.message);
-    return;
-  }
-
-  // Trace automatique dans la main courante
-  await sharedClient.from('crisis_events').insert({
-    id:'EV-' + (crypto.randomUUID ? crypto.randomUUID() : (Date.now()+'-pt')),
-    crisis_id:data.crisis.id,
-    type:'Point situation',
-    event_text:'Point de situation enregistré',
-    measure:p.comment || '',
-    owner:data.crisis.pilot || '',
-    impact:'',
-    author_id:userId,
-    author_name:identity.name,
-    author_role:identity.role || null
-  });
-
-  clearPointForm();
-  await remoteReloadAll(false);
-  showPage('p5');
-};
-
-// Démarrage automatique du partage si des paramètres ont déjà été enregistrés.
-document.addEventListener('DOMContentLoaded', async () => {
-  updateSharedUserLabel();
-  await initSharedMode(false);
-});
-
-</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="board">
@@ -1527,7 +999,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="crisis-strip-actions" style="flex-wrap:wrap">
               <span class="sync-pill local" id="syncStatus">● Mode local</span>
               <span class="shared-user" id="sharedUserLabel"></span>
-              <button class="sync-btn" onclick="openSyncDialog()">⚙️ Partage</button>
+              <button class="sync-btn" onclick="openSyncDialog()">👤 Changer d’utilisateur</button>
               <button class="crisis-history-btn" onclick="showPage('p8')">📚 Historique</button>
               <button class="crisis-open-btn" id="homeCrisisBtn" onclick="showPage('p5')">
                 🚨 Déclencher / ouvrir une crise
@@ -3033,8 +2505,8 @@ let remoteReloadTimer = null;
 
 // Valeurs laissées vides dans la version TEST.
 // Elles pourront être intégrées directement dans la version PROD.
-const DEFAULT_SUPABASE_URL = '';
-const DEFAULT_SUPABASE_KEY = '';
+const DEFAULT_SUPABASE_URL = "https://mhirywbfpiiztmipoqde.supabase.co";
+const DEFAULT_SUPABASE_KEY = "sb_publishable_SHQYfdN0iNrlYGRHDVBVdQ_8XVwPFDg";
 
 function readSyncConfig() {
   try {
@@ -3547,15 +3019,101 @@ document.addEventListener('DOMContentLoaded', async () => {
   await initSharedMode(false);
 });
 
+
+// ================================================================
+// V5.1 — PARCOURS "RENFORT" SIMPLIFIÉ
+// ================================================================
+async function enterCrisisCell() {
+  const name = val('syncName');
+  const role = val('syncRole');
+
+  if (!name) {
+    setSyncMessage('Renseignez votre nom.');
+    return;
+  }
+
+  // Paramètres techniques intégrés dans l'application
+  document.getElementById('syncUrl').value = DEFAULT_SUPABASE_URL;
+  document.getElementById('syncKey').value = DEFAULT_SUPABASE_KEY;
+
+  saveIdentity(name, role);
+  localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify({
+    url: DEFAULT_SUPABASE_URL,
+    key: DEFAULT_SUPABASE_KEY
+  }));
+
+  setSyncMessage('Connexion à la cellule de crise...');
+  const ok = await initSharedMode(true);
+
+  if (ok) {
+    setSyncMessage('Accès activé.', true);
+    setTimeout(() => {
+      closeSyncDialog();
+      const data = loadCrisisData();
+      if (data.active) showPage('p5');
+      else showPage('p1');
+    }, 450);
+  }
+}
+
+// La fenêtre d'identité utilise systématiquement les paramètres intégrés.
+const openSyncDialogBase = openSyncDialog;
+openSyncDialog = function() {
+  openSyncDialogBase();
+
+  const urlEl = document.getElementById('syncUrl');
+  const keyEl = document.getElementById('syncKey');
+  if (urlEl) urlEl.value = DEFAULT_SUPABASE_URL;
+  if (keyEl) keyEl.value = DEFAULT_SUPABASE_KEY;
+
+  const identity = readIdentity();
+  const cancelBtn = document.getElementById('syncCancelBtn');
+
+  // Première connexion : on impose l'identification.
+  if (cancelBtn) cancelBtn.style.display = identity.name ? '' : 'none';
+
+  if (!identity.name) {
+    setSyncMessage('Identifiez-vous pour accéder à la cellule de crise.');
+  } else if (sharedConnected) {
+    setSyncMessage('Vous êtes connecté en temps réel.', true);
+  }
+};
+
+// Première visite : identité demandée automatiquement.
+// Visites suivantes : connexion silencieuse puis accès direct.
+document.addEventListener('DOMContentLoaded', async () => {
+  const identity = readIdentity();
+
+  // Enregistre les paramètres intégrés pour ce navigateur.
+  localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify({
+    url: DEFAULT_SUPABASE_URL,
+    key: DEFAULT_SUPABASE_KEY
+  }));
+
+  if (!identity.name) {
+    setTimeout(() => openSyncDialog(), 250);
+  } else {
+    updateSharedUserLabel();
+    const ok = await initSharedMode(false);
+    if (ok) {
+      const data = loadCrisisData();
+      if (data.active) {
+        // Ne force pas le changement de page si l'utilisateur navigue déjà,
+        // mais actualise immédiatement la crise active.
+        refreshCrisisUI();
+      }
+    }
+  }
+});
+
 </script>
 
 <dialog id="syncDialog">
-  <div class="modal-head">Mode partagé</div>
+  <div class="modal-head">Accès à la cellule de crise</div>
   <div class="modal-body">
     <div class="sync-help">
-      En mode partagé, la crise, la main courante, les points de situation et l'historique sont stockés
-      dans une base centrale Supabase. Toute nouvelle saisie apparaît automatiquement sur les autres postes connectés.
-      Sans configuration Supabase, l'application reste utilisable en mode local.
+      Renseignez simplement votre identité. Elle sera mémorisée sur cet appareil et associée à vos saisies
+      dans la main courante et les points de situation.
     </div>
 
     <div class="sync-config-grid">
@@ -3567,11 +3125,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         <label>Votre fonction</label>
         <input id="syncRole" placeholder="Ex. Directeur entrepôt">
       </div>
-      <div class="field full">
+      <div class="field full" style="display:none">
         <label>Supabase Project URL</label>
         <input id="syncUrl" placeholder="https://xxxxxxxx.supabase.co">
       </div>
-      <div class="field full">
+      <div class="field full" style="display:none">
         <label>Supabase Publishable Key</label>
         <input id="syncKey" type="password" placeholder="sb_publishable_...">
       </div>
@@ -3580,9 +3138,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     <div class="sync-msg" id="syncMessage"></div>
 
     <div class="sync-config-actions">
-      <button class="v2-secondary" onclick="closeSyncDialog()">Annuler</button>
-      <button class="v2-secondary" onclick="saveIdentityOnly()">Enregistrer identité</button>
-      <button class="v2-primary green" onclick="saveAndConnectShared()">Activer le partage</button>
+      <button class="v2-secondary" id="syncCancelBtn" onclick="closeSyncDialog()">Fermer</button>
+      <button class="v2-primary green" onclick="enterCrisisCell()">Entrer dans la cellule de crise</button>
     </div>
   </div>
 </dialog>
